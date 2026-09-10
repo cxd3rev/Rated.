@@ -3005,6 +3005,9 @@ function updateDial() {
 
     if (isDraggingSongLine) {
 
+        persistLiveSongRating();
+
+
         const cell =
             document.querySelector(
                 `.song-row[data-index="${currentSongIndex}"] .song-score`
@@ -3025,6 +3028,8 @@ function updateDial() {
 
         }
 
+
+        updateAlbumScoreChrome();
 
         return;
 
@@ -3515,7 +3520,7 @@ function scoreColorStyle(score) {
 }
 
 
-function updateLiveScoreDisplays() {
+function updateAlbumScoreChrome() {
 
     if (!currentAlbum) {
 
@@ -3577,6 +3582,13 @@ function updateLiveScoreDisplays() {
 
 
     updateRainbowDot(score);
+
+}
+
+
+function updateLiveScoreDisplays() {
+
+    updateAlbumScoreChrome();
 
     updateCurrentSongScoreDisplay();
 
