@@ -98,6 +98,8 @@ let isDraggingSongLine = false;
 
 let dialWasMoved = false;
 
+let pendingSongScroll = false;
+
 
 /*
     IMPORTANT:
@@ -147,6 +149,8 @@ document.addEventListener(
         setupDial();
 
         setupSongRater();
+
+        setupStickyRatingChrome();
 
         updateRatingColor();
 
@@ -1463,6 +1467,8 @@ function openAlbum(albumId, fromArtist = false) {
 
     hideAlbumResult();
 
+    syncStickyRatingChrome();
+
 }
 
 
@@ -1762,6 +1768,170 @@ function renderSongs() {
 }
 
 
+function syncStickyRatingChrome() {
+
+    const nav =
+        document.querySelector(
+            ".navbar"
+        );
+
+
+    const rating =
+        document.querySelector(
+            ".rating-section"
+        );
+
+
+    if (nav) {
+
+        document
+            .documentElement
+            .style
+            .setProperty(
+                "--nav-height",
+                `${nav.offsetHeight}px`
+            );
+
+    }
+
+
+    if (rating && rating.offsetHeight) {
+
+        document
+            .documentElement
+            .style
+            .setProperty(
+                "--rating-bar-height",
+                `${rating.offsetHeight}px`
+            );
+
+    }
+
+}
+
+
+function setupStickyRatingChrome() {
+
+    const nav =
+        document.querySelector(
+            ".navbar"
+        );
+
+
+    const rating =
+        document.querySelector(
+            ".rating-section"
+        );
+
+
+    if (!nav) {
+
+        return;
+
+    }
+
+
+    syncStickyRatingChrome();
+
+    new ResizeObserver(syncStickyRatingChrome).observe(nav);
+
+    if (rating) {
+
+        new ResizeObserver(syncStickyRatingChrome).observe(rating);
+
+    }
+
+}
+
+
+function scrollSelectedSongIntoView(row) {
+
+    if (!row) {
+
+        return;
+
+    }
+
+
+    const mobile =
+        window.matchMedia(
+            "(max-width: 1100px)"
+        ).matches;
+
+
+    if (!mobile) {
+
+        const rater =
+            document.getElementById(
+                "songRater"
+            );
+
+
+        const target =
+            (
+                rater
+                &&
+                rater.offsetParent
+            )
+            ? rater
+            : row;
+
+
+        target.scrollIntoView({
+            block: "nearest",
+            behavior: "smooth"
+        });
+
+        return;
+
+    }
+
+
+    row.scrollIntoView({
+        block: "start",
+        behavior: "auto"
+    });
+
+
+    const nav =
+        document.querySelector(
+            ".navbar"
+        );
+
+
+    const sticky =
+        document.querySelector(
+            ".rating-section"
+        );
+
+
+    const targetTop =
+        (nav ? nav.offsetHeight : 0)
+        +
+        (sticky ? sticky.offsetHeight : 0)
+        +
+        8;
+
+
+    const delta =
+        row.getBoundingClientRect().top -
+        targetTop;
+
+
+    if (Math.abs(delta) > 1) {
+
+        window.scrollTo({
+            top:
+                window.scrollY +
+                delta,
+            behavior: "auto"
+        });
+
+    }
+
+}
+
+
 function parkSongRater() {
 
     const rater =
@@ -2029,6 +2199,8 @@ function selectSong(index) {
 
 
     dialWasMoved = false;
+
+    pendingSongScroll = true;
 
 
     updateDial();
@@ -2742,30 +2914,21 @@ function updateCurrentSongScoreDisplay() {
 
 
     if (
+        pendingSongScroll
+        &&
         !isDraggingDial
         &&
         !isDraggingSongLine
     ) {
 
-        const rater =
-            document.getElementById(
-                "songRater"
+        pendingSongScroll = false;
+
+        requestAnimationFrame(() => {
+
+            requestAnimationFrame(
+                () => scrollSelectedSongIntoView(row)
             );
 
-
-        const scrollTarget =
-            (
-                rater
-                &&
-                rater.offsetParent
-            )
-            ? rater
-            : row;
-
-
-        scrollTarget.scrollIntoView({
-            block: "nearest",
-            behavior: "smooth"
         });
 
     }
@@ -3047,6 +3210,8 @@ function nextSong() {
 
 
         dialWasMoved = false;
+
+        pendingSongScroll = true;
 
 
         updateDial();

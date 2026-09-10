@@ -12,6 +12,10 @@
 
 html {
     height: 100%;
+
+    --nav-height: 80px;
+
+    --rating-bar-height: 102px;
 }
 
 
@@ -936,13 +940,24 @@ h1 {
 
     cursor: grab;
 
-    height: 36px;
+    height: 56px;
 
-    padding: 14px 0;
+    padding: 16px 0;
 
     background-clip: content-box;
 
     background-origin: content-box;
+}
+
+
+.song-rate-line .rainbow-dot {
+    width: 28px;
+
+    height: 28px;
+
+    box-shadow:
+        0 0 12px #ffffff,
+        0 0 28px rgba(255, 255, 255, 0.6);
 }
 
 
@@ -1737,6 +1752,73 @@ h1 {
 
     .song-row.current + .song-rater {
         display: block;
+    }
+
+
+    .rating-section {
+        position: sticky;
+
+        top: var(--nav-height);
+
+        z-index: 40;
+
+        background: rgba(8, 8, 8, 0.96);
+
+        backdrop-filter: blur(18px);
+
+        margin: 0 -20px 12px;
+
+        padding: 10px 20px 12px;
+
+        border-bottom: 1px solid #222;
+    }
+
+
+    .rating-instructions {
+        display: none;
+    }
+
+
+    .rating-section .rainbow-rating {
+        margin-top: 10px;
+    }
+
+
+    .rating-section .big-score {
+        font-size: 28px;
+
+        margin-top: 2px;
+    }
+
+
+    .rating-section .small-label {
+        font-size: 8px;
+    }
+
+
+    .song-row {
+        scroll-margin-top:
+            calc(
+                var(--nav-height)
+                +
+                var(--rating-bar-height)
+                +
+                8px
+            );
+    }
+
+
+    #albumPage:not(.hidden) {
+        padding-bottom:
+            calc(
+                100dvh
+                -
+                var(--nav-height)
+                -
+                var(--rating-bar-height)
+                -
+                80px
+            );
     }
 
 }
