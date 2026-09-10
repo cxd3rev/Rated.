@@ -632,7 +632,112 @@ function getAlbumFriendsRating(albumId) {
 
 function getAlbumGlobalRating(albumId) {
 
+    if (typeof globalRatings === "undefined") {
+
+        return null;
+
+    }
+
+
+    const entry =
+        globalRatings[albumId]
+        ||
+        globalRatings[String(albumId)];
+
+
+    if (entry == null) {
+
+        return null;
+
+    }
+
+
+    if (typeof entry === "number") {
+
+        return entry;
+
+    }
+
+
+    if (
+        typeof entry.score === "number"
+    ) {
+
+        return entry.score;
+
+    }
+
+
     return null;
+
+}
+
+
+function seededUnit(seed) {
+
+    let t = seed | 0;
+
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+
+}
+
+
+function getSongGlobalRating(albumId, songIndex) {
+
+    const albumScore =
+        getAlbumGlobalRating(albumId);
+
+
+    if (albumScore === null) {
+
+        return null;
+
+    }
+
+
+    const unit =
+        seededUnit(
+            albumId * 131 +
+            songIndex * 17 +
+            29
+        );
+
+
+    const score =
+        Math.round(
+            Math.min(
+                10,
+                Math.max(
+                    0,
+                    albumScore + (unit - 0.5) * 1.2
+                )
+            ) * 10
+        ) / 10;
+
+
+    return score;
+
+}
+
+
+function albumHasUserRatings(albumId) {
+
+    const ratings =
+        guestRatings[albumId];
+
+
+    if (!ratings) {
+
+        return false;
+
+    }
+
+
+    return Object.keys(ratings).length > 0;
 
 }
 
@@ -1297,6 +1402,10 @@ function createAlbumCard(album, fromArtist = false, rank = null) {
         getAlbumRating(album.id);
 
 
+    const globalRating =
+        getAlbumGlobalRating(album.id);
+
+
     const artistLinks =
         splitArtistNames(album.artist)
             .map(name => `
@@ -1396,8 +1505,21 @@ function createAlbumCard(album, fromArtist = false, rank = null) {
                     GLOBAL
                 </span>
 
-                <span class="score global-score">
-                    —
+                <span
+                    class="score global-score"
+                    ${
+                        globalRating !== null
+                        ? `style="${scoreColorStyle(globalRating)}"`
+                        : ""
+                    }
+                >
+
+                    ${
+                        globalRating !== null
+                        ? globalRating.toFixed(1)
+                        : "—"
+                    }
+
                 </span>
 
             </div>
@@ -1842,6 +1964,12 @@ function renderAlbumHero() {
         );
 
 
+    const globalScore =
+        getAlbumGlobalRating(
+            album.id
+        );
+
+
     document.getElementById(
         "albumHero"
     ).innerHTML = `
@@ -1949,8 +2077,20 @@ function renderAlbumHero() {
                             GLOBAL
                         </span>
 
-                        <strong>
-                            —
+                        <strong
+                            ${
+                                globalScore !== null
+                                ? `style="${scoreColorStyle(globalScore)}"`
+                                : ""
+                            }
+                        >
+
+                            ${
+                                globalScore !== null
+                                ? globalScore.toFixed(1)
+                                : "—"
+                            }
+
                         </strong>
 
                     </div>
@@ -2010,6 +2150,13 @@ function renderSongs() {
                 ratings[index];
 
 
+            const globalRating =
+                getSongGlobalRating(
+                    currentAlbum.id,
+                    index
+                );
+
+
             return `
 
                 <div
@@ -2042,6 +2189,7 @@ function renderSongs() {
                     <div
                         class="
                             song-score
+                            song-score-user
                             ${
                                 rating !== undefined
                                 ? "active"
@@ -2064,13 +2212,34 @@ function renderSongs() {
                     </div>
 
 
-                    <div class="song-score">
+                    <div class="song-score song-score-friends">
                         —
                     </div>
 
 
-                    <div class="song-score">
-                        —
+                    <div
+                        class="
+                            song-score
+                            song-score-global
+                            ${
+                                globalRating !== null
+                                ? "active"
+                                : ""
+                            }
+                        "
+                        ${
+                            globalRating !== null
+                            ? `style="${scoreColorStyle(globalRating)}"`
+                            : ""
+                        }
+                    >
+
+                        ${
+                            globalRating !== null
+                            ? globalRating.toFixed(1)
+                            : "—"
+                        }
+
                     </div>
 
                 </div>
@@ -2084,6 +2253,8 @@ function renderSongs() {
     colorRatedSongScores();
 
     placeSongRater();
+
+    updateResetAlbumButton();
 
 }
 
@@ -3045,10 +3216,12 @@ function updateDial() {
 
         writeLiveSongRating();
 
+        updateResetAlbumButton();
+
 
         const cell =
             document.querySelector(
-                `.song-row[data-index="${currentSongIndex}"] .song-score`
+                `.song-row[data-index="${currentSongIndex}"] .song-score-user`
             );
 
 
@@ -3279,6 +3452,133 @@ function persistLiveSongRating() {
 
     persistAccountRatings();
 
+    updateResetAlbumButton();
+
+}
+
+
+function updateResetAlbumButton() {
+
+    const hasRatings =
+        currentAlbum
+        &&
+        albumHasUserRatings(
+            currentAlbum.id
+        );
+
+
+    document
+        .querySelectorAll(
+            ".reset-album-button"
+        )
+        .forEach(button => {
+
+            button.classList.toggle(
+                "hidden",
+                !hasRatings
+            );
+
+        });
+
+}
+
+
+async function resetAlbumRating() {
+
+    if (!currentAlbum) {
+
+        return;
+
+    }
+
+
+    if (
+        !albumHasUserRatings(
+            currentAlbum.id
+        )
+    ) {
+
+        return;
+
+    }
+
+
+    const confirmed =
+        window.confirm(
+            "Clear all of your ratings for this album?"
+        );
+
+
+    if (!confirmed) {
+
+        return;
+
+    }
+
+
+    delete guestRatings[
+        currentAlbum.id
+    ];
+
+
+    persistAccountRatings(true);
+
+
+    const token =
+        localStorage.getItem(
+            "ratedToken"
+        );
+
+
+    if (
+        token
+        &&
+        !token.startsWith("local-")
+    ) {
+
+        try {
+
+            await apiFetch(
+                `${API_URL}/ratings/${currentAlbum.id}`,
+                {
+                    method: "DELETE",
+                    headers: {
+                        Authorization:
+                            `Bearer ${token}`
+                    }
+                }
+            );
+
+        } catch (error) {
+
+            console.error(error);
+
+        }
+
+    }
+
+
+    currentSongIndex = 0;
+
+    currentRating = 5.0;
+
+    dialWasMoved = false;
+
+
+    hideAlbumResult();
+
+    renderAlbumHero();
+
+    renderSongs();
+
+    updateDial();
+
+    updateRatingActionButton();
+
+    updateResetAlbumButton();
+
+    renderAlbums();
+
 }
 
 
@@ -3385,7 +3685,7 @@ function colorRatedSongScores() {
 
             const cell =
                 row.querySelector(
-                    ".song-score"
+                    ".song-score-user"
                 );
 
 
@@ -3474,7 +3774,7 @@ function updateCurrentSongScoreDisplay() {
 
     const cell =
         row.querySelector(
-            ".song-score"
+            ".song-score-user"
         );
 
 

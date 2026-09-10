@@ -41,12 +41,13 @@
 
     <link
         rel="stylesheet"
-        href="style.css?v=12"
+        href="style.css?v=14"
     >
 
     <script src="albums.js" defer></script>
     <script src="artistPhotos.js" defer></script>
-    <script src="script.js?v=12" defer></script>
+    <script src="globalRatings.js?v=14" defer></script>
+    <script src="script.js?v=14" defer></script>
 
 </head>
 
@@ -298,8 +299,20 @@
             </div>
 
 
-            <div class="rating-instructions">
-                Drag to rate this song
+            <div class="rating-header-actions">
+
+                <div class="rating-instructions">
+                    Drag to rate this song
+                </div>
+
+                <button
+                    type="button"
+                    class="reset-album-button hidden"
+                    onclick="resetAlbumRating()"
+                >
+                    Reset ratings
+                </button>
+
             </div>
 
         </div>
@@ -504,6 +517,14 @@
                     onclick="nextSong()"
                 >
                     Next Song →
+                </button>
+
+                <button
+                    type="button"
+                    class="reset-album-button hidden"
+                    onclick="resetAlbumRating()"
+                >
+                    Reset ratings
                 </button>
 
             </div>

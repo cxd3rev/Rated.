@@ -1,10 +1,11 @@
-const CACHE = "rated-app-v9";
+const CACHE = "rated-app-v10";
 const SHELL = [
     "./",
     "./index.html",
     "./style.css",
     "./albums.js",
     "./artistPhotos.js",
+    "./globalRatings.js",
     "./script.js",
     "./manifest.webmanifest",
     "./icon.svg"
