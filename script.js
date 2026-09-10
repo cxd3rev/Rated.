@@ -2180,6 +2180,11 @@ function renderSongs() {
             return `
 
                 <div
+                    class="song-item ${index === currentSongIndex ? "is-current" : ""}"
+                    data-index="${index}"
+                >
+
+                <div
                     class="song-row ${index === currentSongIndex ? "current" : ""}"
                     data-index="${index}"
                     onclick="selectSong(${index})"
@@ -2261,6 +2266,8 @@ function renderSongs() {
                         }
 
                     </div>
+
+                </div>
 
                 </div>
 
@@ -2505,9 +2512,9 @@ function placeSongRater() {
         );
 
 
-    const row =
+    const item =
         document.querySelector(
-            `.song-row[data-index="${currentSongIndex}"]`
+            `.song-item[data-index="${currentSongIndex}"]`
         );
 
 
@@ -2518,9 +2525,9 @@ function placeSongRater() {
     }
 
 
-    if (row) {
+    if (item) {
 
-        row.after(rater);
+        item.appendChild(rater);
 
     } else {
 
@@ -3736,11 +3743,24 @@ function updateCurrentSongScoreDisplay() {
     colorRatedSongScores();
 
     document
+        .querySelectorAll(".song-item")
+        .forEach(item => {
+
+            item.classList.toggle(
+                "is-current",
+                Number(item.dataset.index) === currentSongIndex
+            );
+
+        });
+
+
+    document
         .querySelectorAll(".song-row")
         .forEach(row => {
 
-            row.classList.remove(
-                "current"
+            row.classList.toggle(
+                "current",
+                Number(row.dataset.index) === currentSongIndex
             );
 
         });

@@ -1,4 +1,4 @@
-const CACHE = "rated-app-v10";
+const CACHE = "rated-app-v11";
 const SHELL = [
     "./",
     "./index.html",
@@ -55,7 +55,7 @@ self.addEventListener("fetch", event => {
                 })
                 .catch(() => cached);
 
-            return cached || network;
+            return network.then(response => response || cached);
         })
     );
 });
