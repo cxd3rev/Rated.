@@ -964,8 +964,11 @@ h1 {
 }
 
 
+.song-rater,
+.song-rater-scale,
 .song-rate-line {
     touch-action: none;
+}
 
     cursor: grab;
 

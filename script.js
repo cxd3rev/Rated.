@@ -2392,6 +2392,23 @@ function setupSongRater() {
         }
 
 
+        const point =
+            event.touches
+            ? event.touches[0]
+            : event;
+
+
+        if (
+            !point
+            ||
+            point.clientX === undefined
+        ) {
+
+            return;
+
+        }
+
+
         event.preventDefault();
 
         event.stopPropagation();
@@ -2405,9 +2422,10 @@ function setupSongRater() {
 
         try {
 
-            line.setPointerCapture(
-                event.pointerId
-            );
+            (event.currentTarget || line)
+                .setPointerCapture(
+                    event.pointerId
+                );
 
         } catch (error) {
 
@@ -2415,7 +2433,7 @@ function setupSongRater() {
 
 
         setRatingFromLine(
-            event,
+            point,
             line
         );
 
@@ -2441,10 +2459,16 @@ function setupSongRater() {
         const point =
             event.touches
             ? event.touches[0]
+            : event.changedTouches
+            ? event.changedTouches[0]
             : event;
 
 
-        if (!point) {
+        if (
+            !point
+            ||
+            point.clientX === undefined
+        ) {
 
             return;
 
@@ -2498,8 +2522,22 @@ function setupSongRater() {
     );
 
 
+    surface.addEventListener(
+        "touchstart",
+        startDrag,
+        { passive: false }
+    );
+
+
     document.addEventListener(
         "pointermove",
+        moveDrag,
+        { passive: false }
+    );
+
+
+    document.addEventListener(
+        "touchmove",
         moveDrag,
         { passive: false }
     );
@@ -2512,7 +2550,7 @@ function setupSongRater() {
 
 
     document.addEventListener(
-        "pointercancel",
+        "touchend",
         stopDrag
     );
 
@@ -3005,7 +3043,7 @@ function updateDial() {
 
     if (isDraggingSongLine) {
 
-        persistLiveSongRating();
+        writeLiveSongRating();
 
 
         const cell =
@@ -3204,7 +3242,7 @@ function updateRatingColor() {
 }
 
 
-function persistLiveSongRating() {
+function writeLiveSongRating() {
 
     if (!currentAlbum) {
 
@@ -3232,6 +3270,12 @@ function persistLiveSongRating() {
         currentSongIndex
     ] = currentRating;
 
+}
+
+
+function persistLiveSongRating() {
+
+    writeLiveSongRating();
 
     persistAccountRatings();
 
@@ -3531,15 +3575,25 @@ function updateAlbumScoreChrome() {
     }
 
 
+    const live =
+        getLiveAlbumRating(
+            currentAlbum.id
+        );
+
+
     const score =
-        getAlbumRating(
+        live !== null
+        ? live
+        : getAlbumRating(
             currentAlbum.id
         );
 
 
     const text =
         score !== null
-        ? score.toFixed(1)
+        ? (
+            Math.round(score * 10) / 10
+        ).toFixed(1)
         : "—";
 
 
@@ -3582,6 +3636,22 @@ function updateAlbumScoreChrome() {
 
 
     updateRainbowDot(score);
+
+
+    const rainbowDot =
+        document.getElementById(
+            "rainbowDot"
+        );
+
+
+    if (rainbowDot) {
+
+        rainbowDot.style.transition =
+            isDraggingSongLine
+            ? "none"
+            : "";
+
+    }
 
 }
 
@@ -3853,6 +3923,80 @@ function hideAlbumResult() {
 /* =====================================================
    GET ALBUM RATING
 ===================================================== */
+
+function getLiveAlbumRating(albumId) {
+
+    const album =
+        albumById.get(albumId);
+
+
+    if (!album) {
+
+        return null;
+
+    }
+
+
+    const ratings = {
+        ...(
+            guestRatings[albumId]
+            ||
+            {}
+        )
+    };
+
+
+    if (
+        currentAlbum
+        &&
+        currentAlbum.id === albumId
+        &&
+        (
+            isDraggingSongLine
+            ||
+            isDraggingDial
+            ||
+            dialWasMoved
+        )
+    ) {
+
+        ratings[currentSongIndex] =
+            currentRating;
+
+    }
+
+
+    const values =
+        album.songs
+            .map(
+                (song, index) =>
+                    ratings[index]
+            )
+            .filter(
+                value =>
+                    value !== undefined
+                    &&
+                    value !== null
+            );
+
+
+    if (values.length === 0) {
+
+        return null;
+
+    }
+
+
+    return (
+        values.reduce(
+            (a, b) =>
+                a + b,
+            0
+        ) / values.length
+    );
+
+}
+
 
 function getAlbumRating(albumId) {
 
