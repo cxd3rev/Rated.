@@ -1,11 +1,16 @@
-from fastapi import FastAPI, HTTPException, Header
+from fastapi import FastAPI, HTTPException, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, field_validator
+from email.message import EmailMessage
+from collections import defaultdict
+from time import time
 import sqlite3
 import hashlib
 import secrets
 import base64
+import os
+import smtplib
 from pathlib import Path
 
 
@@ -18,12 +23,17 @@ app = FastAPI(title="RATED. API")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://127.0.0.1:5500",
-        "http://localhost:5500",
-        "http://127.0.0.1:8000",
-        "http://localhost:8000",
-        "http://127.0.0.1:5501",
-        "http://localhost:5501",
+        origin
+        for origin in [
+            "http://127.0.0.1:5500",
+            "http://localhost:5500",
+            "http://127.0.0.1:8000",
+            "http://localhost:8000",
+            "http://127.0.0.1:5501",
+            "http://localhost:5501",
+            os.environ.get("RATED_ORIGIN", "").strip(),
+        ]
+        if origin
     ],
     allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?",
     allow_credentials=True,
@@ -125,6 +135,20 @@ def init_db():
             FOREIGN KEY (user_id)
             REFERENCES users(id)
             ON DELETE CASCADE
+        )
+        """
+    )
+
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS waitlist (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT NOT NULL UNIQUE,
+            email TEXT NOT NULL UNIQUE,
+            password_hash TEXT NOT NULL,
+            welcome_sent INTEGER NOT NULL DEFAULT 0,
+            launch_sent INTEGER NOT NULL DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
         """
     )
@@ -320,6 +344,20 @@ class RatingRequest(BaseModel):
     album_id: int
     album_score: float
     song_ratings: dict[str, float]
+
+
+class WaitlistRequest(BaseModel):
+    username: str
+    email: str
+    password: str
+
+    @field_validator("email")
+    @classmethod
+    def email_must_be_valid(cls, value: str) -> str:
+        email = value.strip().lower()
+        if "@" not in email or "." not in email.split("@")[-1]:
+            raise ValueError("Enter a valid email address.")
+        return email
 
 
 # ============================================================
@@ -818,6 +856,280 @@ def serve_frontend():
     }
 
 
+@app.get("/waitlist")
+@app.get("/waitlist.html")
+def serve_waitlist():
+    waitlist_file = BASE_DIR / "waitlist.html"
+    if waitlist_file.exists():
+        return FileResponse(waitlist_file)
+    raise HTTPException(status_code=404, detail="Waitlist page not found.")
+
+
+@app.get("/waitlist.css")
+def serve_waitlist_css():
+    return FileResponse(BASE_DIR / "waitlist.css")
+
+
+@app.get("/waitlist.js")
+def serve_waitlist_js():
+    return FileResponse(BASE_DIR / "waitlist.js")
+
+
+@app.get("/icon.svg")
+def serve_icon():
+    return FileResponse(BASE_DIR / "icon.svg")
+
+
+# ============================================================
+# WAITLIST EMAIL
+# ============================================================
+
+WAITLIST_HITS = defaultdict(list)
+
+
+def smtp_configured() -> bool:
+    return bool(os.environ.get("SMTP_HOST", "").strip())
+
+
+def send_waitlist_email(to_email: str, username: str, kind: str) -> bool:
+    host = os.environ.get("SMTP_HOST", "").strip()
+    if not host:
+        return False
+
+    port = int(os.environ.get("SMTP_PORT", "587"))
+    user = os.environ.get("SMTP_USER", "").strip()
+    password = os.environ.get("SMTP_PASSWORD", "")
+    sender = os.environ.get("SMTP_FROM", user or "rated@localhost")
+    app_url = os.environ.get(
+        "RATED_APP_URL",
+        "http://127.0.0.1:8000",
+    ).strip()
+
+    if kind == "launch":
+        subject = "RATED is live. Your seat is waiting."
+        headline = "The list just opened."
+        body = (
+            f"Hey {username},\n\n"
+            "RATED is live. Your waitlist account is ready — "
+            "same username, same password, same inbox.\n\n"
+            f"Walk in: {app_url}\n\n"
+            "Rate the albums. Rank the catalog. Don't blink.\n\n"
+            "— RATED."
+        )
+        html_copy = (
+            f"<p>Hey {username},</p>"
+            "<p>RATED is live. Your waitlist account is ready — "
+            "same username, same password, same inbox.</p>"
+            f'<p><a href="{app_url}" style="color:#ff2f92">Open RATED</a></p>'
+            "<p>Rate the albums. Rank the catalog. Don't blink.</p>"
+        )
+    else:
+        subject = "You're on the RATED waitlist."
+        headline = "You're locked in."
+        body = (
+            f"Hey {username},\n\n"
+            "You're on the RATED waitlist. When the app launches, "
+            "this email is how we'll tap you in.\n\n"
+            "Keep your username and password. That's your seat.\n\n"
+            "— RATED."
+        )
+        html_copy = (
+            f"<p>Hey {username},</p>"
+            "<p>You're on the RATED waitlist. When the app launches, "
+            "this email is how we'll tap you in.</p>"
+            "<p>Keep your username and password. That's your seat.</p>"
+        )
+
+    message = EmailMessage()
+    message["Subject"] = subject
+    message["From"] = sender
+    message["To"] = to_email
+    message.set_content(body)
+    message.add_alternative(
+        f"""
+        <html>
+          <body style="margin:0;padding:32px;background:#080808;color:#f4f4f4;font-family:Inter,Arial,sans-serif;">
+            <div style="max-width:480px;margin:0 auto;">
+              <p style="letter-spacing:3px;font-size:11px;color:#ff2f92;font-weight:700;">RATED.</p>
+              <h1 style="font-size:28px;letter-spacing:-1px;">{headline}</h1>
+              {html_copy}
+              <p style="color:#777;font-size:13px;">— RATED.</p>
+            </div>
+          </body>
+        </html>
+        """,
+        subtype="html",
+    )
+
+    try:
+        with smtplib.SMTP(host, port, timeout=20) as smtp:
+            smtp.starttls()
+            if user:
+                smtp.login(user, password)
+            smtp.send_message(message)
+        return True
+    except Exception as error:
+        print("Waitlist email failed:", error)
+        return False
+
+
+def rate_limit_waitlist(ip: str) -> None:
+    now = time()
+    recent = [stamp for stamp in WAITLIST_HITS[ip] if now - stamp < 3600]
+    if len(recent) >= 8:
+        raise HTTPException(
+            status_code=429,
+            detail="Too many signups from this network. Try again later.",
+        )
+    recent.append(now)
+    WAITLIST_HITS[ip] = recent
+
+
+# ============================================================
+# WAITLIST
+# ============================================================
+
+@app.get("/waitlist/count")
+def waitlist_count():
+    connection = get_db()
+    cursor = connection.cursor()
+    cursor.execute("SELECT COUNT(*) AS total FROM waitlist")
+    total = cursor.fetchone()["total"]
+    connection.close()
+    return {"count": total}
+
+
+@app.post("/waitlist")
+def join_waitlist(data: WaitlistRequest, request: Request):
+    client = request.client.host if request.client else "unknown"
+    rate_limit_waitlist(client)
+
+    username = data.username.strip()
+    email = str(data.email).strip().lower()
+    password = data.password
+
+    if len(username) < 3:
+        raise HTTPException(
+            status_code=400,
+            detail="Username must be at least 3 characters.",
+        )
+
+    if len(username) > 30:
+        raise HTTPException(
+            status_code=400,
+            detail="Username cannot exceed 30 characters.",
+        )
+
+    if len(password) < 8:
+        raise HTTPException(
+            status_code=400,
+            detail="Password must be at least 8 characters.",
+        )
+
+    connection = get_db()
+    cursor = connection.cursor()
+
+    cursor.execute(
+        """
+        SELECT id FROM waitlist
+        WHERE username = ? OR email = ?
+        """,
+        (username, email),
+    )
+    existing = cursor.fetchone()
+
+    if existing:
+        connection.close()
+        raise HTTPException(
+            status_code=400,
+            detail="You're already on the list.",
+        )
+
+    cursor.execute(
+        """
+        SELECT id FROM users
+        WHERE username = ? OR email = ?
+        """,
+        (username, email),
+    )
+    taken = cursor.fetchone()
+
+    if taken:
+        connection.close()
+        raise HTTPException(
+            status_code=400,
+            detail="That username or email is already taken.",
+        )
+
+    password_hash = hash_password(password)
+
+    cursor.execute(
+        """
+        INSERT INTO waitlist (
+            username,
+            email,
+            password_hash
+        )
+        VALUES (?, ?, ?)
+        """,
+        (username, email, password_hash),
+    )
+
+    waitlist_id = cursor.lastrowid
+    connection.commit()
+
+    welcome_sent = 1 if send_waitlist_email(email, username, "welcome") else 0
+
+    if welcome_sent:
+        cursor.execute(
+            "UPDATE waitlist SET welcome_sent = 1 WHERE id = ?",
+            (waitlist_id,),
+        )
+        connection.commit()
+
+    connection.close()
+
+    return {
+        "ok": True,
+        "username": username,
+        "email": email,
+        "emailSent": bool(welcome_sent),
+        "message": "You're locked in.",
+    }
+
+
+@app.post("/waitlist/notify")
+def notify_waitlist_launch(x_waitlist_key: str | None = Header(default=None)):
+    expected = os.environ.get("WAITLIST_NOTIFY_KEY", "").strip()
+    if not expected or x_waitlist_key != expected:
+        raise HTTPException(status_code=401, detail="Invalid notify key.")
+
+    connection = get_db()
+    cursor = connection.cursor()
+    cursor.execute(
+        """
+        SELECT id, username, email
+        FROM waitlist
+        WHERE launch_sent = 0
+        """
+    )
+    rows = cursor.fetchall()
+
+    sent = 0
+    for row in rows:
+        if send_waitlist_email(row["email"], row["username"], "launch"):
+            cursor.execute(
+                "UPDATE waitlist SET launch_sent = 1 WHERE id = ?",
+                (row["id"],),
+            )
+            sent += 1
+
+    connection.commit()
+    connection.close()
+
+    return {"sent": sent, "total": len(rows)}
+
+
 # ============================================================
 # STARTUP MESSAGE
 # ============================================================
@@ -836,8 +1148,8 @@ if __name__ == "__main__":
     print("Server:")
     print("http://127.0.0.1:8000")
     print("")
-    print("API:")
-    print("http://127.0.0.1:8000/api")
+    print("Waitlist:")
+    print("http://127.0.0.1:8000/waitlist")
     print("")
     print("======================================")
     print("")

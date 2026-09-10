@@ -41,12 +41,12 @@
 
     <link
         rel="stylesheet"
-        href="style.css?v=7"
+        href="style.css?v=9"
     >
 
     <script src="albums.js" defer></script>
     <script src="artistPhotos.js" defer></script>
-    <script src="script.js" defer></script>
+    <script src="script.js?v=10" defer></script>
 
 </head>
 
@@ -378,11 +378,18 @@
 
                 </div>
 
-                <div class="rainbow-rating song-rater-scale">
+                <div
+                    id="songRateScale"
+                    class="rainbow-rating song-rater-scale"
+                >
 
-                    <span>
+                    <button
+                        type="button"
+                        class="song-rate-end"
+                        onclick="setSongRatingEnd(10)"
+                    >
                         10.0
-                    </span>
+                    </button>
 
                     <div
                         id="songRateLine"
@@ -396,9 +403,13 @@
 
                     </div>
 
-                    <span>
+                    <button
+                        type="button"
+                        class="song-rate-end"
+                        onclick="setSongRatingEnd(0)"
+                    >
                         0.0
-                    </span>
+                    </button>
 
                 </div>
 
@@ -561,17 +572,138 @@
     id="artistsPage"
     class="page hidden"
 >
-    <div class="page-header">
-        <p class="eyebrow">
-            DISCOGRAPHY
-        </p>
-        <h1>
-            Artists
-        </h1>
-        <p class="subtitle">
-            Average score from every album you've rated.
-        </p>
+    <div class="page-header page-header-row">
+
+        <div>
+
+            <p class="eyebrow">
+                DISCOGRAPHY
+            </p>
+
+            <h1>
+                Artists
+            </h1>
+
+            <p class="subtitle">
+                Your average, friends, and global — from every rated album.
+            </p>
+
+        </div>
+
+        <div
+            class="sort-wrap"
+            id="artistSortWrap"
+        >
+
+            <button
+                type="button"
+                class="sort-button"
+                onclick="toggleArtistSortMenu(event)"
+            >
+                Sort · <span id="artistSortLabel">Highest yours</span>
+            </button>
+
+            <div
+                id="artistSortOptions"
+                class="sort-options hidden"
+            >
+
+                <button
+                    type="button"
+                    class="sort-option"
+                    data-sort="az"
+                    onclick="setArtistSort('az')"
+                >
+                    Alphabetical A–Z
+                </button>
+
+                <button
+                    type="button"
+                    class="sort-option"
+                    data-sort="za"
+                    onclick="setArtistSort('za')"
+                >
+                    Alphabetical Z–A
+                </button>
+
+                <button
+                    type="button"
+                    class="sort-option"
+                    data-sort="highest"
+                    onclick="setArtistSort('highest')"
+                >
+                    Highest yours
+                </button>
+
+                <button
+                    type="button"
+                    class="sort-option"
+                    data-sort="lowest"
+                    onclick="setArtistSort('lowest')"
+                >
+                    Lowest yours
+                </button>
+
+                <button
+                    type="button"
+                    class="sort-option"
+                    data-sort="highest-global"
+                    onclick="setArtistSort('highest-global')"
+                >
+                    Highest global
+                </button>
+
+                <button
+                    type="button"
+                    class="sort-option"
+                    data-sort="lowest-global"
+                    onclick="setArtistSort('lowest-global')"
+                >
+                    Lowest global
+                </button>
+
+                <button
+                    type="button"
+                    class="sort-option"
+                    data-sort="highest-friends"
+                    onclick="setArtistSort('highest-friends')"
+                >
+                    Highest friends
+                </button>
+
+                <button
+                    type="button"
+                    class="sort-option"
+                    data-sort="lowest-friends"
+                    onclick="setArtistSort('lowest-friends')"
+                >
+                    Lowest friends
+                </button>
+
+                <button
+                    type="button"
+                    class="sort-option"
+                    data-sort="albums"
+                    onclick="setArtistSort('albums')"
+                >
+                    Most albums
+                </button>
+
+                <button
+                    type="button"
+                    class="sort-option"
+                    data-sort="latest"
+                    onclick="setArtistSort('latest')"
+                >
+                    Latest release
+                </button>
+
+            </div>
+
+        </div>
+
     </div>
+
     <div
         id="artistsList"
         class="album-list"

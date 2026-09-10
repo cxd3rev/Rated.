@@ -96,6 +96,8 @@ let isDraggingDial = false;
 
 let isDraggingSongLine = false;
 
+let songLinePercent = null;
+
 let dialWasMoved = false;
 
 let pendingSongScroll = false;
@@ -127,12 +129,28 @@ let currentArtistName = null;
 let albumSort =
     localStorage.getItem("albumSort") || "latest";
 
+let artistSort =
+    localStorage.getItem("artistSort") || "highest";
+
 const ALBUM_SORT_LABELS = {
     latest: "Latest",
     new: "New",
     year: "By year",
     highest: "Highest rated",
     lowest: "Lowest rated"
+};
+
+const ARTIST_SORT_LABELS = {
+    az: "A–Z",
+    za: "Z–A",
+    highest: "Highest yours",
+    lowest: "Lowest yours",
+    "highest-global": "Highest global",
+    "lowest-global": "Lowest global",
+    "highest-friends": "Highest friends",
+    "lowest-friends": "Lowest friends",
+    albums: "Most albums",
+    latest: "Latest release"
 };
 
 
@@ -158,6 +176,8 @@ document.addEventListener(
 
         updateSortButton();
 
+        updateArtistSortButton();
+
         document.addEventListener(
             "click",
             event => {
@@ -167,6 +187,13 @@ document.addEventListener(
                         "albumSortWrap"
                     );
 
+
+                const artistWrap =
+                    document.getElementById(
+                        "artistSortWrap"
+                    );
+
+
                 if (
                     wrap &&
                     !wrap.contains(event.target)
@@ -175,6 +202,20 @@ document.addEventListener(
                     document
                         .getElementById(
                             "sortOptions"
+                        )
+                        .classList.add("hidden");
+
+                }
+
+
+                if (
+                    artistWrap &&
+                    !artistWrap.contains(event.target)
+                ) {
+
+                    document
+                        .getElementById(
+                            "artistSortOptions"
                         )
                         .classList.add("hidden");
 
@@ -464,6 +505,8 @@ function showArtists() {
 
     renderArtists();
 
+    updateArtistSortButton();
+
 }
 
 
@@ -549,14 +592,59 @@ function getArtistDirectory() {
 
 function getArtistAverage(artistAlbums) {
 
+    return averageScores(
+        artistAlbums.map(album =>
+            getAlbumRating(album.id)
+        )
+    );
+
+}
+
+
+function getArtistFriendsAverage(artistAlbums) {
+
+    return averageScores(
+        artistAlbums.map(album =>
+            getAlbumFriendsRating(album.id)
+        )
+    );
+
+}
+
+
+function getArtistGlobalAverage(artistAlbums) {
+
+    return averageScores(
+        artistAlbums.map(album =>
+            getAlbumGlobalRating(album.id)
+        )
+    );
+
+}
+
+
+function getAlbumFriendsRating(albumId) {
+
+    return null;
+
+}
+
+
+function getAlbumGlobalRating(albumId) {
+
+    return null;
+
+}
+
+
+function averageScores(values) {
+
     const scores =
-        artistAlbums
-            .map(album =>
-                getAlbumRating(album.id)
-            )
-            .filter(score =>
-                score !== null
-            );
+        values.filter(score =>
+            score !== null
+            &&
+            score !== undefined
+        );
 
 
     if (scores.length === 0) {
@@ -577,6 +665,54 @@ function getArtistAverage(artistAlbums) {
     return Math.round(
         average * 10
     ) / 10;
+
+}
+
+
+function compareNullableScores(left, right, descending, tiebreak) {
+
+    if (left === null && right === null) {
+
+        return tiebreak();
+
+    }
+
+
+    if (left === null) {
+
+        return 1;
+
+    }
+
+
+    if (right === null) {
+
+        return -1;
+
+    }
+
+
+    const diff =
+        descending
+        ? right - left
+        : left - right;
+
+
+    return diff || tiebreak();
+
+}
+
+
+function artistScoreMarkup(score) {
+
+    if (score === null) {
+
+        return "—";
+
+    }
+
+
+    return score.toFixed(1);
 
 }
 
@@ -610,8 +746,20 @@ function createArtistCover(artist) {
 
 function createArtistCard(artist, listNumber) {
 
-    const average =
+    const yourAverage =
         getArtistAverage(
+            artist.albums
+        );
+
+
+    const friendsAverage =
+        getArtistFriendsAverage(
+            artist.albums
+        );
+
+
+    const globalAverage =
+        getArtistGlobalAverage(
             artist.albums
         );
 
@@ -628,7 +776,7 @@ function createArtistCard(artist, listNumber) {
     return `
 
         <div
-            class="album-card"
+            class="album-card artist-card"
             onclick="openArtist('${encodeURIComponent(artist.name)}')"
         >
 
@@ -657,54 +805,72 @@ function createArtistCard(artist, listNumber) {
             </div>
 
 
-            <div class="score-column">
+            <div class="score-triple">
 
-                <span class="score-label">
-                    AVG SCORE
-                </span>
+                <div class="score-column">
 
-                <span
-                    class="score user-score"
-                    ${
-                        average !== null
-                        ? `style="${scoreColorStyle(average)}"`
-                        : ""
-                    }
-                >
+                    <span class="score-label">
+                        YOUR AVG
+                    </span>
 
-                    ${
-                        average !== null
-                        ? average.toFixed(1)
-                        : "—"
-                    }
+                    <span
+                        class="score user-score"
+                        ${
+                            yourAverage !== null
+                            ? `style="${scoreColorStyle(yourAverage)}"`
+                            : ""
+                        }
+                    >
 
-                </span>
+                        ${artistScoreMarkup(yourAverage)}
 
-            </div>
+                    </span>
+
+                </div>
 
 
-            <div class="score-column">
+                <div class="score-column">
 
-                <span class="score-label">
-                    FRIENDS
-                </span>
+                    <span class="score-label">
+                        FRIENDS
+                    </span>
 
-                <span class="score friend-score">
-                    —
-                </span>
+                    <span
+                        class="score friend-score"
+                        ${
+                            friendsAverage !== null
+                            ? `style="${scoreColorStyle(friendsAverage)}"`
+                            : ""
+                        }
+                    >
 
-            </div>
+                        ${artistScoreMarkup(friendsAverage)}
+
+                    </span>
+
+                </div>
 
 
-            <div class="score-column">
+                <div class="score-column">
 
-                <span class="score-label">
-                    GLOBAL
-                </span>
+                    <span class="score-label">
+                        GLOBAL
+                    </span>
 
-                <span class="score global-score">
-                    —
-                </span>
+                    <span
+                        class="score global-score"
+                        ${
+                            globalAverage !== null
+                            ? `style="${scoreColorStyle(globalAverage)}"`
+                            : ""
+                        }
+                    >
+
+                        ${artistScoreMarkup(globalAverage)}
+
+                    </span>
+
+                </div>
 
             </div>
 
@@ -719,94 +885,110 @@ function sortArtistList(list) {
 
     const sorted = list.slice();
 
+    const byName = (a, b) =>
+        a.name.localeCompare(b.name);
+
+
     const newestYear = artist =>
         Math.max(
             ...artist.albums.map(album => album.year)
         );
 
-    const oldestYear = artist =>
-        Math.min(
-            ...artist.albums.map(album => album.year)
-        );
 
-    const newestId = artist =>
-        Math.max(
-            ...artist.albums.map(album => album.id)
-        );
-
-
-    if (albumSort === "new") {
+    if (artistSort === "za") {
 
         sorted.sort(
             (a, b) =>
-                newestId(b) - newestId(a)
-                ||
-                a.name.localeCompare(b.name)
+                b.name.localeCompare(a.name)
         );
 
-    } else if (albumSort === "year") {
+    } else if (artistSort === "highest") {
+
+        sorted.sort((a, b) =>
+            compareNullableScores(
+                getArtistAverage(a.albums),
+                getArtistAverage(b.albums),
+                true,
+                () => byName(a, b)
+            )
+        );
+
+    } else if (artistSort === "lowest") {
+
+        sorted.sort((a, b) =>
+            compareNullableScores(
+                getArtistAverage(a.albums),
+                getArtistAverage(b.albums),
+                false,
+                () => byName(a, b)
+            )
+        );
+
+    } else if (artistSort === "highest-global") {
+
+        sorted.sort((a, b) =>
+            compareNullableScores(
+                getArtistGlobalAverage(a.albums),
+                getArtistGlobalAverage(b.albums),
+                true,
+                () => byName(a, b)
+            )
+        );
+
+    } else if (artistSort === "lowest-global") {
+
+        sorted.sort((a, b) =>
+            compareNullableScores(
+                getArtistGlobalAverage(a.albums),
+                getArtistGlobalAverage(b.albums),
+                false,
+                () => byName(a, b)
+            )
+        );
+
+    } else if (artistSort === "highest-friends") {
+
+        sorted.sort((a, b) =>
+            compareNullableScores(
+                getArtistFriendsAverage(a.albums),
+                getArtistFriendsAverage(b.albums),
+                true,
+                () => byName(a, b)
+            )
+        );
+
+    } else if (artistSort === "lowest-friends") {
+
+        sorted.sort((a, b) =>
+            compareNullableScores(
+                getArtistFriendsAverage(a.albums),
+                getArtistFriendsAverage(b.albums),
+                false,
+                () => byName(a, b)
+            )
+        );
+
+    } else if (artistSort === "albums") {
 
         sorted.sort(
             (a, b) =>
-                oldestYear(a) - oldestYear(b)
+                b.albums.length - a.albums.length
                 ||
-                a.name.localeCompare(b.name)
+                byName(a, b)
         );
 
-    } else if (albumSort === "highest") {
-
-        sorted.sort((a, b) => {
-
-            const left = getArtistAverage(a.albums);
-            const right = getArtistAverage(b.albums);
-
-            if (left === null && right === null) {
-                return a.name.localeCompare(b.name);
-            }
-
-            if (left === null) {
-                return 1;
-            }
-
-            if (right === null) {
-                return -1;
-            }
-
-            return right - left;
-
-        });
-
-    } else if (albumSort === "lowest") {
-
-        sorted.sort((a, b) => {
-
-            const left = getArtistAverage(a.albums);
-            const right = getArtistAverage(b.albums);
-
-            if (left === null && right === null) {
-                return a.name.localeCompare(b.name);
-            }
-
-            if (left === null) {
-                return 1;
-            }
-
-            if (right === null) {
-                return -1;
-            }
-
-            return left - right;
-
-        });
-
-    } else {
+    } else if (artistSort === "latest") {
 
         sorted.sort(
             (a, b) =>
                 newestYear(b) - newestYear(a)
                 ||
-                a.name.localeCompare(b.name)
+                byName(a, b)
         );
+
+    } else {
+
+        sorted.sort(byName);
 
     }
 
@@ -916,6 +1098,18 @@ function openArtist(artistName) {
         );
 
 
+    const friendsAverage =
+        getArtistFriendsAverage(
+            artist.albums
+        );
+
+
+    const globalAverage =
+        getArtistGlobalAverage(
+            artist.albums
+        );
+
+
     const ratedCount =
         artist.albums.filter(
             album =>
@@ -980,13 +1174,15 @@ function openArtist(artistName) {
                             YOUR AVERAGE
                         </span>
 
-                        <strong>
-
+                        <strong
                             ${
                                 average !== null
-                                ? average.toFixed(1)
-                                : "—"
+                                ? `style="${scoreColorStyle(average)}"`
+                                : ""
                             }
+                        >
+
+                            ${artistScoreMarkup(average)}
 
                         </strong>
 
@@ -996,11 +1192,19 @@ function openArtist(artistName) {
                     <div class="album-stat">
 
                         <span class="small-label">
-                            ALBUMS
+                            FRIENDS
                         </span>
 
-                        <strong>
-                            ${artist.albums.length}
+                        <strong
+                            ${
+                                friendsAverage !== null
+                                ? `style="${scoreColorStyle(friendsAverage)}"`
+                                : ""
+                            }
+                        >
+
+                            ${artistScoreMarkup(friendsAverage)}
+
                         </strong>
 
                     </div>
@@ -1009,11 +1213,19 @@ function openArtist(artistName) {
                     <div class="album-stat">
 
                         <span class="small-label">
-                            RATED
+                            GLOBAL
                         </span>
 
-                        <strong>
-                            ${ratedCount}
+                        <strong
+                            ${
+                                globalAverage !== null
+                                ? `style="${scoreColorStyle(globalAverage)}"`
+                                : ""
+                            }
+                        >
+
+                            ${artistScoreMarkup(globalAverage)}
+
                         </strong>
 
                     </div>
@@ -1343,6 +1555,11 @@ function toggleSortMenu(event) {
 
     menu.classList.toggle("hidden");
 
+
+    document
+        .getElementById("artistSortOptions")
+        .classList.add("hidden");
+
 }
 
 
@@ -1396,12 +1613,105 @@ function updateSortButton() {
 
 
     document
-        .querySelectorAll(".sort-option")
+        .querySelectorAll("#sortOptions .sort-option")
         .forEach(button => {
 
             button.classList.toggle(
                 "active",
                 button.dataset.sort === albumSort
+            );
+
+        });
+
+}
+
+
+function toggleArtistSortMenu(event) {
+
+    if (event) {
+
+        event.stopPropagation();
+
+    }
+
+
+    document
+        .getElementById("sortOptions")
+        .classList.add("hidden");
+
+
+    document
+        .getElementById("artistSortOptions")
+        .classList.toggle("hidden");
+
+}
+
+
+function setArtistSort(sort) {
+
+    artistSort = sort;
+
+    localStorage.setItem(
+        "artistSort",
+        sort
+    );
+
+    updateArtistSortButton();
+
+    document
+        .getElementById("artistSortOptions")
+        .classList.add("hidden");
+
+
+    const query =
+        document.getElementById(
+            "searchInput"
+        ).value.trim();
+
+
+    const artistsVisible =
+        !document
+            .getElementById("artistsPage")
+            .classList.contains("hidden");
+
+
+    if (query && artistsVisible) {
+
+        applySearch();
+
+    } else if (artistsVisible) {
+
+        renderArtists();
+
+    }
+
+}
+
+
+function updateArtistSortButton() {
+
+    const label =
+        document.getElementById(
+            "artistSortLabel"
+        );
+
+
+    if (label) {
+
+        label.textContent =
+            ARTIST_SORT_LABELS[artistSort] ||
+            "Highest yours";
+
+    }
+
+
+    document
+        .querySelectorAll("#artistSortOptions .sort-option")
+        .forEach(button => {
+
+            button.classList.toggle(
+                "active",
+                button.dataset.sort === artistSort
             );
 
         });
@@ -1468,6 +1778,16 @@ function openAlbum(albumId, fromArtist = false) {
     hideAlbumResult();
 
     syncStickyRatingChrome();
+
+    pendingSongScroll = true;
+
+    requestAnimationFrame(() => {
+
+        requestAnimationFrame(
+            () => scrollSelectedSongIntoView()
+        );
+
+    });
 
 }
 
@@ -1846,17 +2166,25 @@ function setupStickyRatingChrome() {
 
 function scrollSelectedSongIntoView(row) {
 
-    if (!row) {
-
-        return;
-
-    }
-
-
     const mobile =
         window.matchMedia(
             "(max-width: 1100px)"
         ).matches;
+
+
+    const target =
+        row
+        ||
+        document.querySelector(
+            `.song-row[data-index="${currentSongIndex}"]`
+        );
+
+
+    if (!target) {
+
+        return;
+
+    }
 
 
     if (!mobile) {
@@ -1867,17 +2195,17 @@ function scrollSelectedSongIntoView(row) {
             );
 
 
-        const target =
+        const desktopTarget =
             (
                 rater
                 &&
                 rater.offsetParent
             )
             ? rater
-            : row;
+            : target;
 
 
-        target.scrollIntoView({
+        desktopTarget.scrollIntoView({
             block: "nearest",
             behavior: "smooth"
         });
@@ -1887,47 +2215,70 @@ function scrollSelectedSongIntoView(row) {
     }
 
 
-    row.scrollIntoView({
-        block: "start",
-        behavior: "auto"
-    });
+    const snap = () => {
+
+        const song =
+            document.querySelector(
+                `.song-row[data-index="${currentSongIndex}"]`
+            );
 
 
-    const nav =
-        document.querySelector(
-            ".navbar"
-        );
+        if (!song) {
+
+            return;
+
+        }
 
 
-    const sticky =
-        document.querySelector(
-            ".rating-section"
-        );
+        syncStickyRatingChrome();
 
 
-    const targetTop =
-        (nav ? nav.offsetHeight : 0)
-        +
-        (sticky ? sticky.offsetHeight : 0)
-        +
-        8;
+        const nav =
+            document.querySelector(
+                ".navbar"
+            );
 
 
-    const delta =
-        row.getBoundingClientRect().top -
-        targetTop;
+        const sticky =
+            document.querySelector(
+                ".rating-section"
+            );
 
 
-    if (Math.abs(delta) > 1) {
+        const targetTop =
+            (nav ? nav.offsetHeight : 0)
+            +
+            (sticky ? sticky.offsetHeight : 0)
+            +
+            8;
 
-        window.scrollTo({
-            top:
-                window.scrollY +
-                delta,
-            behavior: "auto"
-        });
 
-    }
+        const delta =
+            song.getBoundingClientRect().top -
+            targetTop;
+
+
+        if (Math.abs(delta) > 1) {
+
+            window.scrollTo({
+                top:
+                    window.scrollY +
+                    delta,
+                behavior: "auto"
+            });
+
+        }
+
+    };
+
+
+    snap();
+
+    requestAnimationFrame(snap);
+
+    setTimeout(snap, 60);
+
+    setTimeout(snap, 140);
 
 }
 
@@ -1997,6 +2348,12 @@ function setupSongRater() {
         );
 
 
+    const scale =
+        document.getElementById(
+            "songRateScale"
+        );
+
+
     if (
         !line
         ||
@@ -2011,93 +2368,170 @@ function setupSongRater() {
     line.dataset.ready = "1";
 
 
-    const stopDrag = () => {
+    const startDrag = event => {
 
-        isDraggingSongLine = false;
+        if (
+            event.pointerType === "mouse"
+            &&
+            event.button !== 0
+        ) {
 
-        line.classList.remove(
+            return;
+
+        }
+
+
+        if (
+            event.target.closest(
+                ".song-rate-end"
+            )
+        ) {
+
+            return;
+
+        }
+
+
+        event.preventDefault();
+
+        event.stopPropagation();
+
+        isDraggingSongLine = true;
+
+        line.classList.add(
             "is-dragging"
+        );
+
+
+        try {
+
+            line.setPointerCapture(
+                event.pointerId
+            );
+
+        } catch (error) {
+
+        }
+
+
+        setRatingFromLine(
+            event,
+            line
         );
 
     };
 
 
-    line.addEventListener(
-        "pointerdown",
-        event => {
+    const moveDrag = event => {
 
-            if (
-                event.pointerType === "mouse"
-                &&
-                event.button !== 0
-            ) {
+        if (!isDraggingSongLine) {
 
-                return;
+            return;
 
-            }
+        }
 
+
+        if (event.cancelable) {
 
             event.preventDefault();
 
-            event.stopPropagation();
-
-            isDraggingSongLine = true;
-
-            line.classList.add(
-                "is-dragging"
-            );
+        }
 
 
-            try {
-
-                line.setPointerCapture(
-                    event.pointerId
-                );
-
-            } catch (error) {
-
-            }
+        const point =
+            event.touches
+            ? event.touches[0]
+            : event;
 
 
-            setRatingFromLine(
-                event,
-                line
-            );
+        if (!point) {
+
+            return;
 
         }
+
+
+        setRatingFromLine(
+            point,
+            line
+        );
+
+    };
+
+
+    const stopDrag = () => {
+
+        if (!isDraggingSongLine) {
+
+            return;
+
+        }
+
+
+        isDraggingSongLine = false;
+
+        songLinePercent = null;
+
+        line.classList.remove(
+            "is-dragging"
+        );
+
+
+        persistLiveSongRating();
+
+        persistAccountRatings(true);
+
+        updateLiveScoreDisplays();
+
+        updateInlineSongRater();
+
+    };
+
+
+    const surface =
+        scale || line;
+
+
+    surface.addEventListener(
+        "pointerdown",
+        startDrag
     );
 
 
-    line.addEventListener(
+    document.addEventListener(
         "pointermove",
-        event => {
-
-            if (!isDraggingSongLine) {
-
-                return;
-
-            }
-
-
-            setRatingFromLine(
-                event,
-                line
-            );
-
-        }
+        moveDrag,
+        { passive: false }
     );
 
 
-    line.addEventListener(
+    document.addEventListener(
         "pointerup",
         stopDrag
     );
 
 
-    line.addEventListener(
+    document.addEventListener(
         "pointercancel",
         stopDrag
     );
+
+}
+
+
+function setSongRatingEnd(score) {
+
+    currentRating = score;
+
+    songLinePercent = null;
+
+    dialWasMoved = true;
+
+    updateDial();
+
+    persistLiveSongRating();
+
+    persistAccountRatings(true);
 
 }
 
@@ -2108,24 +2542,46 @@ function setRatingFromLine(event, line) {
         line.getBoundingClientRect();
 
 
-    const t =
-        (event.clientX - rect.left)
-        /
+    const width =
         Math.max(rect.width, 1);
 
 
-    const score =
-        (
-            1 -
-            Math.max(
-                0,
-                Math.min(1, t)
+    const visualT =
+        Math.max(
+            0,
+            Math.min(
+                1,
+                (event.clientX - rect.left) / width
             )
-        ) * 10;
+        );
+
+
+    songLinePercent = visualT;
+
+
+    const edge =
+        Math.min(16, width * 0.05);
+
+
+    const scoreT =
+        Math.max(
+            0,
+            Math.min(
+                1,
+                (
+                    event.clientX -
+                    (rect.left + edge)
+                )
+                /
+                Math.max(width - edge * 2, 1)
+            )
+        );
 
 
     currentRating =
-        Math.round(score * 10) / 10;
+        Math.round(
+            (1 - scoreT) * 100
+        ) / 10;
 
 
     dialWasMoved = true;
@@ -2162,8 +2618,15 @@ function updateInlineSongRater() {
 
         dot.classList.add("visible");
 
+
+        const percent =
+            songLinePercent !== null
+            ? songLinePercent * 100
+            : (1 - currentRating / 10) * 100;
+
+
         dot.style.left =
-            `${(1 - currentRating / 10) * 100}%`;
+            `${percent}%`;
 
     }
 
@@ -2540,6 +3003,34 @@ function updateDial() {
     updateInlineSongRater();
 
 
+    if (isDraggingSongLine) {
+
+        const cell =
+            document.querySelector(
+                `.song-row[data-index="${currentSongIndex}"] .song-score`
+            );
+
+
+        if (cell) {
+
+            cell.textContent =
+                currentRating.toFixed(1);
+
+            cell.classList.add("active");
+
+            applyScoreColor(
+                cell,
+                currentRating
+            );
+
+        }
+
+
+        return;
+
+    }
+
+
     if (
         currentAlbum
         &&
@@ -2547,8 +3038,6 @@ function updateDial() {
             dialWasMoved
             ||
             isDraggingDial
-            ||
-            isDraggingSongLine
         )
     ) {
 
