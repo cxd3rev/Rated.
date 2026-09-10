@@ -136,8 +136,10 @@ const ALBUM_SORT_LABELS = {
     latest: "Latest",
     new: "New",
     year: "By year",
-    highest: "Highest rated",
-    lowest: "Lowest rated"
+    highest: "Highest yours",
+    lowest: "Lowest yours",
+    "highest-global": "Highest global",
+    "lowest-global": "Lowest global"
 };
 
 const ARTIST_SORT_LABELS = {
@@ -1577,85 +1579,103 @@ function renderAlbums(list = albums) {
 }
 
 
-function sortAlbumList(list) {
+function compareAlbumScores(list, getScore, direction) {
 
     const sorted = list.slice();
 
-    const rating = album =>
-        getAlbumRating(album.id);
+    sorted.sort((a, b) => {
 
+        const left = getScore(a);
+        const right = getScore(b);
+
+        if (left === null && right === null) {
+            return b.year - a.year;
+        }
+
+        if (left === null) {
+            return 1;
+        }
+
+        if (right === null) {
+            return -1;
+        }
+
+        return direction === "asc"
+            ? left - right
+            : right - left;
+
+    });
+
+    return sorted;
+
+}
+
+
+function sortAlbumList(list) {
 
     if (albumSort === "new") {
 
-        sorted.sort(
+        return list.slice().sort(
             (a, b) => b.id - a.id
         );
 
-    } else if (albumSort === "year") {
+    }
 
-        sorted.sort(
+    if (albumSort === "year") {
+
+        return list.slice().sort(
             (a, b) =>
                 a.year - b.year ||
                 a.id - b.id
         );
 
-    } else if (albumSort === "highest") {
+    }
 
-        sorted.sort((a, b) => {
+    if (albumSort === "highest") {
 
-            const left = rating(a);
-            const right = rating(b);
-
-            if (left === null && right === null) {
-                return b.year - a.year;
-            }
-
-            if (left === null) {
-                return 1;
-            }
-
-            if (right === null) {
-                return -1;
-            }
-
-            return right - left;
-
-        });
-
-    } else if (albumSort === "lowest") {
-
-        sorted.sort((a, b) => {
-
-            const left = rating(a);
-            const right = rating(b);
-
-            if (left === null && right === null) {
-                return b.year - a.year;
-            }
-
-            if (left === null) {
-                return 1;
-            }
-
-            if (right === null) {
-                return -1;
-            }
-
-            return left - right;
-
-        });
-
-    } else {
-
-        sorted.sort(
-            (a, b) =>
-                b.year - a.year ||
-                b.id - a.id
+        return compareAlbumScores(
+            list,
+            album => getAlbumRating(album.id),
+            "desc"
         );
 
     }
 
-    return sorted;
+    if (albumSort === "lowest") {
+
+        return compareAlbumScores(
+            list,
+            album => getAlbumRating(album.id),
+            "asc"
+        );
+
+    }
+
+    if (albumSort === "highest-global") {
+
+        return compareAlbumScores(
+            list,
+            album => getAlbumGlobalRating(album.id),
+            "desc"
+        );
+
+    }
+
+    if (albumSort === "lowest-global") {
+
+        return compareAlbumScores(
+            list,
+            album => getAlbumGlobalRating(album.id),
+            "asc"
+        );
+
+    }
+
+    return list.slice().sort(
+        (a, b) =>
+            b.year - a.year ||
+            b.id - a.id
+    );
 
 }
 

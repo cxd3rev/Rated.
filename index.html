@@ -41,13 +41,13 @@
 
     <link
         rel="stylesheet"
-        href="style.css?v=14"
+        href="style.css?v=15"
     >
 
     <script src="albums.js" defer></script>
     <script src="artistPhotos.js" defer></script>
-    <script src="globalRatings.js?v=14" defer></script>
-    <script src="script.js?v=14" defer></script>
+    <script src="globalRatings.js?v=15" defer></script>
+    <script src="script.js?v=15" defer></script>
 
 </head>
 
@@ -231,7 +231,7 @@
                     data-sort="highest"
                     onclick="setAlbumSort('highest')"
                 >
-                    Highest rated
+                    Highest yours
                 </button>
 
                 <button
@@ -240,7 +240,25 @@
                     data-sort="lowest"
                     onclick="setAlbumSort('lowest')"
                 >
-                    Lowest rated
+                    Lowest yours
+                </button>
+
+                <button
+                    type="button"
+                    class="sort-option"
+                    data-sort="highest-global"
+                    onclick="setAlbumSort('highest-global')"
+                >
+                    Highest global
+                </button>
+
+                <button
+                    type="button"
+                    class="sort-option"
+                    data-sort="lowest-global"
+                    onclick="setAlbumSort('lowest-global')"
+                >
+                    Lowest global
                 </button>
 
             </div>
