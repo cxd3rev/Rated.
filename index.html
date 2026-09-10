@@ -20,8 +20,8 @@
     <meta name="description" content="Rate hip-hop albums, song by song.">
 
     <title>RATED — Album Ratings</title>
-    <link rel="icon" type="image/svg+xml" href="icon.svg">
-    <link rel="apple-touch-icon" href="icon.svg">
+    <link rel="icon" type="image/svg+xml" href="assets/icon.svg">
+    <link rel="apple-touch-icon" href="assets/icon.svg">
     <link rel="manifest" href="manifest.webmanifest">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -41,13 +41,13 @@
 
     <link
         rel="stylesheet"
-        href="style.css?v=17"
+        href="css/style.css?v=19"
     >
 
-    <script src="albums.js" defer></script>
-    <script src="artistPhotos.js" defer></script>
-    <script src="globalRatings.js?v=17" defer></script>
-    <script src="script.js?v=17" defer></script>
+    <script src="js/albums.js" defer></script>
+    <script src="js/artistPhotos.js" defer></script>
+    <script src="js/globalRatings.js?v=19" defer></script>
+    <script src="js/script.js?v=19" defer></script>
 
 </head>
 
@@ -845,36 +845,86 @@
         </p>
 
         <h1>
-            Your friends
+            Friends
         </h1>
 
+        <p class="subtitle">
+            Search usernames, follow people, and see what they rate highest.
+        </p>
+
+    </div>
+
+
+    <div class="friends-search-wrap">
+
+        <span class="search-icon">
+            ⌕
+        </span>
+
+        <input
+            id="friendSearchInput"
+            type="search"
+            placeholder="Search usernames..."
+            autocomplete="off"
+            oninput="searchFriends()"
+        >
+
     </div>
 
 
-    <div class="friends-container">
+    <div id="friendSearchResults"></div>
 
-        <div class="friend">
 
-            <div class="friend-avatar">
-                ?
-            </div>
+    <h2
+        id="friendsListTitle"
+        class="friends-section-title"
+    >
+        Following
+    </h2>
 
-            <div>
 
-                <strong>
-                    No friends yet
-                </strong>
+    <div
+        id="friendsList"
+        class="friends-container"
+    ></div>
 
-                <p>
-                    Friends will appear here once
-                    accounts are connected.
-                </p>
+</section>
 
-            </div>
 
-        </div>
+<section
+    id="friendProfilePage"
+    class="page hidden"
+>
 
-    </div>
+    <button
+        class="back-button"
+        onclick="showFriends()"
+    >
+        ← Friends
+    </button>
+
+
+    <div id="friendProfileHero"></div>
+
+
+    <h2 class="friends-section-title">
+        Highest rated albums
+    </h2>
+
+    <div
+        id="friendTopAlbums"
+        class="album-list"
+    ></div>
+
+
+    <h2 class="friends-section-title">
+        Highest rated artists
+    </h2>
+
+    <div
+        id="friendTopArtists"
+        class="album-list"
+    ></div>
 
 </section>
 

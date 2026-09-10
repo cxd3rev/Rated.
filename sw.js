@@ -1,14 +1,14 @@
-const CACHE = "rated-app-v11";
+const CACHE = "rated-app-v12";
 const SHELL = [
     "./",
     "./index.html",
-    "./style.css",
-    "./albums.js",
-    "./artistPhotos.js",
-    "./globalRatings.js",
-    "./script.js",
+    "./css/style.css",
+    "./js/albums.js",
+    "./js/artistPhotos.js",
+    "./js/globalRatings.js",
+    "./js/script.js",
     "./manifest.webmanifest",
-    "./icon.svg"
+    "./assets/icon.svg"
 ];
 
 self.addEventListener("install", event => {
