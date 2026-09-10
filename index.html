@@ -357,6 +357,61 @@
 
             <div id="songsList"></div>
 
+            <div
+                id="songRater"
+                class="song-rater"
+                onclick="event.stopPropagation()"
+            >
+
+                <div class="song-rater-top">
+
+                    <span class="song-rater-label">
+                        YOUR RATING
+                    </span>
+
+                    <span
+                        id="inlineRatingValue"
+                        class="song-rater-value"
+                    >
+                        5.0
+                    </span>
+
+                </div>
+
+                <div class="rainbow-rating song-rater-scale">
+
+                    <span>
+                        10.0
+                    </span>
+
+                    <div
+                        id="songRateLine"
+                        class="rainbow-line song-rate-line"
+                    >
+
+                        <div
+                            id="songRateDot"
+                            class="rainbow-dot visible"
+                        ></div>
+
+                    </div>
+
+                    <span>
+                        0.0
+                    </span>
+
+                </div>
+
+                <button
+                    class="done-button"
+                    id="inlineRatingActionButton"
+                    onclick="nextSong()"
+                >
+                    Next Song →
+                </button>
+
+            </div>
+
         </div>
 
 

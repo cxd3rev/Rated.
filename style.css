@@ -868,6 +868,99 @@ h1 {
 }
 
 
+.song-rater {
+    display: none;
+
+    padding: 16px 12px 18px;
+
+    margin: 0 0 12px;
+
+    background: #120810;
+
+    border: 1px solid #2a2a2a;
+
+    border-top: none;
+
+    border-radius: 0 0 8px 8px;
+
+    box-shadow: inset 3px 0 0 #ff2f92;
+
+    scroll-margin-bottom: calc(88px + env(safe-area-inset-bottom));
+}
+
+
+.song-rater-top {
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    gap: 4px;
+
+    margin-bottom: 12px;
+}
+
+
+.song-rater-label {
+    font-size: 9px;
+
+    letter-spacing: 2px;
+
+    color: #666;
+
+    font-weight: 700;
+}
+
+
+.song-rater-value {
+    font-size: 28px;
+
+    font-weight: 800;
+
+    line-height: 1;
+}
+
+
+.song-rater-scale {
+    margin-top: 0;
+
+    margin-bottom: 14px;
+
+    gap: 10px;
+}
+
+
+.song-rate-line {
+    touch-action: none;
+
+    cursor: grab;
+
+    height: 36px;
+
+    padding: 14px 0;
+
+    background-clip: content-box;
+
+    background-origin: content-box;
+}
+
+
+.song-rate-line.is-dragging {
+    cursor: grabbing;
+}
+
+
+.song-rate-line.is-dragging .rainbow-dot {
+    transition: none;
+}
+
+
+.song-rater .done-button {
+    width: 100%;
+}
+
+
 .song-name {
     display: flex;
 
@@ -1638,7 +1731,12 @@ h1 {
 
 
     .rating-panel {
-        position: static;
+        display: none !important;
+    }
+
+
+    .song-row.current + .song-rater {
+        display: block;
     }
 
 }
@@ -1897,7 +1995,7 @@ h1 {
 
 
     .rating-panel {
-        padding: 20px 16px;
+        display: none !important;
     }
 
 

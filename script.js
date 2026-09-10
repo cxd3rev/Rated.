@@ -94,6 +94,8 @@ let currentRating = 5.0;
 
 let isDraggingDial = false;
 
+let isDraggingSongLine = false;
+
 let dialWasMoved = false;
 
 
@@ -143,6 +145,8 @@ document.addEventListener(
         renderAlbums();
 
         setupDial();
+
+        setupSongRater();
 
         updateRatingColor();
 
@@ -707,6 +711,106 @@ function createArtistCard(artist, listNumber) {
 }
 
 
+function sortArtistList(list) {
+
+    const sorted = list.slice();
+
+    const newestYear = artist =>
+        Math.max(
+            ...artist.albums.map(album => album.year)
+        );
+
+    const oldestYear = artist =>
+        Math.min(
+            ...artist.albums.map(album => album.year)
+        );
+
+    const newestId = artist =>
+        Math.max(
+            ...artist.albums.map(album => album.id)
+        );
+
+
+    if (albumSort === "new") {
+
+        sorted.sort(
+            (a, b) =>
+                newestId(b) - newestId(a)
+                ||
+                a.name.localeCompare(b.name)
+        );
+
+    } else if (albumSort === "year") {
+
+        sorted.sort(
+            (a, b) =>
+                oldestYear(a) - oldestYear(b)
+                ||
+                a.name.localeCompare(b.name)
+        );
+
+    } else if (albumSort === "highest") {
+
+        sorted.sort((a, b) => {
+
+            const left = getArtistAverage(a.albums);
+            const right = getArtistAverage(b.albums);
+
+            if (left === null && right === null) {
+                return a.name.localeCompare(b.name);
+            }
+
+            if (left === null) {
+                return 1;
+            }
+
+            if (right === null) {
+                return -1;
+            }
+
+            return right - left;
+
+        });
+
+    } else if (albumSort === "lowest") {
+
+        sorted.sort((a, b) => {
+
+            const left = getArtistAverage(a.albums);
+            const right = getArtistAverage(b.albums);
+
+            if (left === null && right === null) {
+                return a.name.localeCompare(b.name);
+            }
+
+            if (left === null) {
+                return 1;
+            }
+
+            if (right === null) {
+                return -1;
+            }
+
+            return left - right;
+
+        });
+
+    } else {
+
+        sorted.sort(
+            (a, b) =>
+                newestYear(b) - newestYear(a)
+                ||
+                a.name.localeCompare(b.name)
+        );
+
+    }
+
+    return sorted;
+
+}
+
+
 function renderArtists(list) {
 
     const container =
@@ -716,7 +820,9 @@ function renderArtists(list) {
 
 
     const artists =
-        list || getArtistDirectory();
+        sortArtistList(
+            list || getArtistDirectory()
+        );
 
 
     container.innerHTML = "";
@@ -925,16 +1031,12 @@ function openArtist(artistName) {
 
 
     albumsContainer.innerHTML =
-        artist.albums
-            .slice()
-            .sort(
-                (a, b) =>
-                    b.year - a.year
-            )
-            .map(album =>
+        sortAlbumList(artist.albums)
+            .map((album, index) =>
                 createAlbumCard(
                     album,
-                    true
+                    true,
+                    index + 1
                 )
             )
             .join("");
@@ -973,7 +1075,7 @@ function updateProfileButton() {
    ALBUM CARD
 ===================================================== */
 
-function createAlbumCard(album, fromArtist = false) {
+function createAlbumCard(album, fromArtist = false, rank = null) {
 
     const rating =
         getAlbumRating(album.id);
@@ -1003,7 +1105,7 @@ function createAlbumCard(album, fromArtist = false) {
         >
 
             <div class="album-number">
-                ${album.id}
+                ${rank === null ? album.id : rank}
             </div>
 
 
@@ -1129,7 +1231,9 @@ function renderAlbums(list = albums) {
 
     container.innerHTML =
         sorted
-            .map(album => createAlbumCard(album))
+            .map((album, index) =>
+                createAlbumCard(album, false, index + 1)
+            )
             .join("");
 
 }
@@ -1561,6 +1665,8 @@ function renderSongs() {
         );
 
 
+    parkSongRater();
+
     container.innerHTML = "";
 
 
@@ -1650,6 +1756,246 @@ function renderSongs() {
 
 
     colorRatedSongScores();
+
+    placeSongRater();
+
+}
+
+
+function parkSongRater() {
+
+    const rater =
+        document.getElementById(
+            "songRater"
+        );
+
+
+    const list =
+        document.getElementById(
+            "songsList"
+        );
+
+
+    if (rater && list) {
+
+        list.after(rater);
+
+    }
+
+}
+
+
+function placeSongRater() {
+
+    const rater =
+        document.getElementById(
+            "songRater"
+        );
+
+
+    const row =
+        document.querySelector(
+            `.song-row[data-index="${currentSongIndex}"]`
+        );
+
+
+    if (!rater) {
+
+        return;
+
+    }
+
+
+    if (row) {
+
+        row.after(rater);
+
+    } else {
+
+        parkSongRater();
+
+    }
+
+}
+
+
+function setupSongRater() {
+
+    const line =
+        document.getElementById(
+            "songRateLine"
+        );
+
+
+    if (
+        !line
+        ||
+        line.dataset.ready === "1"
+    ) {
+
+        return;
+
+    }
+
+
+    line.dataset.ready = "1";
+
+
+    const stopDrag = () => {
+
+        isDraggingSongLine = false;
+
+        line.classList.remove(
+            "is-dragging"
+        );
+
+    };
+
+
+    line.addEventListener(
+        "pointerdown",
+        event => {
+
+            if (
+                event.pointerType === "mouse"
+                &&
+                event.button !== 0
+            ) {
+
+                return;
+
+            }
+
+
+            event.preventDefault();
+
+            event.stopPropagation();
+
+            isDraggingSongLine = true;
+
+            line.classList.add(
+                "is-dragging"
+            );
+
+
+            try {
+
+                line.setPointerCapture(
+                    event.pointerId
+                );
+
+            } catch (error) {
+
+            }
+
+
+            setRatingFromLine(
+                event,
+                line
+            );
+
+        }
+    );
+
+
+    line.addEventListener(
+        "pointermove",
+        event => {
+
+            if (!isDraggingSongLine) {
+
+                return;
+
+            }
+
+
+            setRatingFromLine(
+                event,
+                line
+            );
+
+        }
+    );
+
+
+    line.addEventListener(
+        "pointerup",
+        stopDrag
+    );
+
+
+    line.addEventListener(
+        "pointercancel",
+        stopDrag
+    );
+
+}
+
+
+function setRatingFromLine(event, line) {
+
+    const rect =
+        line.getBoundingClientRect();
+
+
+    const t =
+        (event.clientX - rect.left)
+        /
+        Math.max(rect.width, 1);
+
+
+    const score =
+        (
+            1 -
+            Math.max(
+                0,
+                Math.min(1, t)
+            )
+        ) * 10;
+
+
+    currentRating =
+        Math.round(score * 10) / 10;
+
+
+    dialWasMoved = true;
+
+
+    updateDial();
+
+}
+
+
+function updateInlineSongRater() {
+
+    const value =
+        document.getElementById(
+            "inlineRatingValue"
+        );
+
+
+    const dot =
+        document.getElementById(
+            "songRateDot"
+        );
+
+
+    if (value) {
+
+        value.textContent =
+            currentRating.toFixed(1);
+
+    }
+
+
+    if (dot) {
+
+        dot.classList.add("visible");
+
+        dot.style.left =
+            `${(1 - currentRating / 10) * 100}%`;
+
+    }
 
 }
 
@@ -2019,6 +2365,8 @@ function updateDial() {
 
     updateRatingColor();
 
+    updateInlineSongRater();
+
 
     if (
         currentAlbum
@@ -2027,6 +2375,8 @@ function updateDial() {
             dialWasMoved
             ||
             isDraggingDial
+            ||
+            isDraggingSongLine
         )
     ) {
 
@@ -2138,29 +2488,36 @@ function ratingGlowValue(score) {
 
 function updateRatingColor() {
 
-    const element =
-        document.getElementById(
-            "ratingValue"
-        );
+    [
+        "ratingValue",
+        "inlineRatingValue"
+    ].forEach(id => {
+
+        const element =
+            document.getElementById(
+                id
+            );
 
 
-    if (!element) {
+        if (!element) {
 
-        return;
+            return;
 
-    }
-
-
-    element.style.color =
-        ratingColorValue(
-            currentRating
-        );
+        }
 
 
-    element.style.textShadow =
-        ratingGlowValue(
-            currentRating
-        );
+        element.style.color =
+            ratingColorValue(
+                currentRating
+            );
+
+
+        element.style.textShadow =
+            ratingGlowValue(
+                currentRating
+            );
+
+    });
 
 
     const arc =
@@ -2381,11 +2738,37 @@ function updateCurrentSongScoreDisplay() {
 
     row.classList.add("current");
 
+    placeSongRater();
 
-    row.scrollIntoView({
-        block: "nearest",
-        behavior: "smooth"
-    });
+
+    if (
+        !isDraggingDial
+        &&
+        !isDraggingSongLine
+    ) {
+
+        const rater =
+            document.getElementById(
+                "songRater"
+            );
+
+
+        const scrollTarget =
+            (
+                rater
+                &&
+                rater.offsetParent
+            )
+            ? rater
+            : row;
+
+
+        scrollTarget.scrollIntoView({
+            block: "nearest",
+            behavior: "smooth"
+        });
+
+    }
 
 
     const cell =
@@ -2398,6 +2781,8 @@ function updateCurrentSongScoreDisplay() {
         dialWasMoved
         ||
         isDraggingDial
+        ||
+        isDraggingSongLine
         ||
         getSongRating(
             currentAlbum.id,
@@ -2585,13 +2970,7 @@ function finishSongRating() {
 
 function updateRatingActionButton() {
 
-    const button =
-        document.getElementById(
-            "ratingActionButton"
-        );
-
-
-    if (!button || !currentAlbum) {
+    if (!currentAlbum) {
 
         return;
 
@@ -2603,10 +2982,30 @@ function updateRatingActionButton() {
         currentAlbum.songs.length - 1;
 
 
-    button.textContent =
+    const text =
         lastSong
         ? "Done"
         : "Next Song →";
+
+
+    [
+        "ratingActionButton",
+        "inlineRatingActionButton"
+    ].forEach(id => {
+
+        const button =
+            document.getElementById(
+                id
+            );
+
+
+        if (button) {
+
+            button.textContent = text;
+
+        }
+
+    });
 
 }
 
@@ -3138,8 +3537,10 @@ function renderSaved() {
 
 
     container.innerHTML =
-        saved
-            .map(album => createAlbumCard(album))
+        sortAlbumList(saved)
+            .map((album, index) =>
+                createAlbumCard(album, false, index + 1)
+            )
             .join("");
 
 }
@@ -3188,8 +3589,10 @@ function renderPerfect() {
 
 
     container.innerHTML =
-        perfect
-            .map(album => createAlbumCard(album))
+        sortAlbumList(perfect)
+            .map((album, index) =>
+                createAlbumCard(album, false, index + 1)
+            )
             .join("");
 
 }
