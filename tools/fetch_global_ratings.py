@@ -35,8 +35,9 @@ def get_json(url: str):
         except urllib.error.HTTPError as error:
             LAST_REQUEST = time.time()
             if error.code in (429, 500, 502, 503) and attempt < 4:
-                print(f"  retry {error.code}, cooling down", flush=True)
-                time.sleep(180 + attempt * 30)
+                wait_s = 90 if error.code == 429 else 20
+                print(f"  retry {error.code}, waiting {wait_s}s", flush=True)
+                time.sleep(wait_s)
                 continue
             raise
         except Exception as error:
@@ -138,6 +139,8 @@ def main():
     ]
     print(f"{len(data)} already saved, {len(pending)} remaining", flush=True)
 
+    not_found = set()
+
     for index, album in enumerate(pending, start=1):
         key = str(album["id"])
         try:
@@ -145,15 +148,16 @@ def main():
         except Exception as error:
             safe_title = album["title"].encode("ascii", "replace").decode("ascii")
             print(f"  fail {safe_title}: {error}", flush=True)
-            time.sleep(2)
-            found = None
+            time.sleep(8)
+            continue
         if found:
             data[key] = bot_pack(album["id"], found["score"], found["votes"], "discogs")
             safe = f"{album['artist']} - {album['title']}".encode("ascii", "replace").decode("ascii")
             print(f"[{index}/{len(pending)}] {safe}: {data[key]['score']}", flush=True)
         else:
+            not_found.add(key)
             print(f"[{index}/{len(pending)}] skip, fill later", flush=True)
-        if index % 5 == 0:
+        if index % 3 == 0:
             write_out({k: v for k, v in data.items() if v.get("score") is not None})
 
     from collections import defaultdict
@@ -168,19 +172,19 @@ def main():
     fallback = round(sum(real) / len(real), 1) if real else 7.5
     for album in albums:
         key = str(album["id"])
-        row = data.get(key) or {}
-        if row.get("score") is None:
-            rng = random.Random(album["id"] * 17)
-            if artist_scores[album["artist"]]:
-                base = sum(artist_scores[album["artist"]]) / len(artist_scores[album["artist"]])
-                source = "artist-fill"
-            else:
-                base = fallback
-                source = "catalog-fill"
-            score = round(min(9.4, max(5.5, base + rng.uniform(-0.35, 0.35))), 1)
-            data[key] = bot_pack(album["id"], score, 7, source)
+        if key not in not_found:
+            continue
+        rng = random.Random(album["id"] * 17)
+        if artist_scores[album["artist"]]:
+            base = sum(artist_scores[album["artist"]]) / len(artist_scores[album["artist"]])
+            source = "artist-fill"
+        else:
+            base = fallback
+            source = "catalog-fill"
+        score = round(min(9.4, max(5.5, base + rng.uniform(-0.35, 0.35))), 1)
+        data[key] = bot_pack(album["id"], score, 7, source)
 
-    write_out(data)
+    write_out({k: v for k, v in data.items() if v.get("score") is not None})
     filled = sum(1 for row in data.values() if row.get("score") is not None)
     print(f"Done. {filled}/{len(albums)} albums have a global rating.", flush=True)
 

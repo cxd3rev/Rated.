@@ -158,13 +158,16 @@ ALLOWED_FILES = {
     "/icon.svg",
     "/css/waitlist.css",
     "/js/waitlist.js",
+    "/assets/logo.png",
+    "/assets/logo-l.png",
     "/assets/icon.svg",
 }
 
 FILE_ALIASES = {
     "/waitlist.css": "/css/waitlist.css",
     "/waitlist.js": "/js/waitlist.js",
-    "/icon.svg": "/assets/icon.svg",
+    "/icon.svg": "/assets/logo.png",
+    "/icon.png": "/assets/logo.png",
 }
 
 

@@ -1,4 +1,4 @@
-const CACHE = "rated-app-v12";
+const CACHE = "rated-app-v14";
 const SHELL = [
     "./",
     "./index.html",
@@ -8,7 +8,8 @@ const SHELL = [
     "./js/globalRatings.js",
     "./js/script.js",
     "./manifest.webmanifest",
-    "./assets/icon.svg"
+    "./assets/logo.png",
+    "./assets/logo-l.png"
 ];
 
 self.addEventListener("install", event => {

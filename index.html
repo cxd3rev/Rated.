@@ -20,8 +20,8 @@
     <meta name="description" content="Rate hip-hop albums, song by song.">
 
     <title>RATED — Album Ratings</title>
-    <link rel="icon" type="image/svg+xml" href="assets/icon.svg">
-    <link rel="apple-touch-icon" href="assets/icon.svg">
+    <link rel="icon" type="image/png" href="assets/logo.png">
+    <link rel="apple-touch-icon" href="assets/logo.png">
     <link rel="manifest" href="manifest.webmanifest">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -41,12 +41,12 @@
 
     <link
         rel="stylesheet"
-        href="css/style.css?v=19"
+        href="css/style.css?v=22"
     >
 
-    <script src="js/albums.js" defer></script>
-    <script src="js/artistPhotos.js" defer></script>
-    <script src="js/globalRatings.js?v=19" defer></script>
+    <script src="js/albums.js?v=23" defer></script>
+    <script src="js/artistPhotos.js?v=23" defer></script>
+    <script src="js/globalRatings.js?v=23" defer></script>
     <script src="js/script.js?v=19" defer></script>
 
 </head>
@@ -65,8 +65,12 @@
     <div
         class="logo"
         onclick="showHome()"
+        aria-label="RATED"
     >
-        RATED<span>.</span>
+        <img
+            src="assets/logo-l.png"
+            alt="RATED"
+        >
     </div>
 
 
@@ -954,7 +958,10 @@
 
 
         <div class="auth-logo">
-            RATED<span>.</span>
+            <img
+                src="assets/logo-l.png"
+                alt="RATED"
+            >
         </div>
 
 

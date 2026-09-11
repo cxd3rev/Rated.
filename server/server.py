@@ -877,8 +877,9 @@ def serve_waitlist_js():
 
 
 @app.get("/icon.svg")
+@app.get("/icon.png")
 def serve_icon():
-    return FileResponse(BASE_DIR / "assets" / "icon.svg")
+    return FileResponse(BASE_DIR / "assets" / "logo.png")
 
 
 # ============================================================

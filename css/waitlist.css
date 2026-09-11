@@ -39,14 +39,21 @@ body {
 }
 
 .brand {
-    font-size: 15px;
-    font-weight: 800;
-    letter-spacing: -0.6px;
-    margin-bottom: 28px;
+    position: relative;
+    width: 240px;
+    height: 72px;
+    overflow: hidden;
+    margin-bottom: 16px;
 }
 
-.brand span {
-    color: #ff2f92;
+.brand img {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    height: 240px;
+    width: 240px;
+    transform: translate(-50%, -50%);
+    object-fit: cover;
 }
 
 .card {

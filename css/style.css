@@ -86,28 +86,44 @@ button {
 
 
 .logo {
-    font-size: 25px;
+    position: relative;
 
-    font-weight: 800;
+    display: block;
 
-    letter-spacing: -1.5px;
+    width: 132px;
+
+    height: 38px;
+
+    overflow: hidden;
 
     cursor: pointer;
 
-    width: 140px;
+    flex-shrink: 0;
+}
 
-    transition: opacity 0.2s;
+
+.logo img,
+.auth-logo img {
+    position: absolute;
+
+    left: 50%;
+
+    top: 50%;
+
+    height: 124px;
+
+    width: 124px;
+
+    margin: 0;
+
+    transform: translate(-50%, -50%);
+
+    object-fit: cover;
 }
 
 
 .logo:hover {
     opacity: 0.82;
-}
-
-
-.logo span,
-.auth-logo span {
-    color: #ff2f92;
 }
 
 
@@ -1843,11 +1859,22 @@ h1 {
 
 
 .auth-logo {
-    font-size: 23px;
+    position: relative;
 
-    font-weight: 800;
+    width: 210px;
 
-    margin-bottom: 25px;
+    height: 64px;
+
+    overflow: hidden;
+
+    margin-bottom: 18px;
+}
+
+
+.auth-logo img {
+    height: 210px;
+
+    width: 210px;
 }
 
 
@@ -2004,11 +2031,16 @@ h1 {
 
 
     .logo {
-        width: auto;
+        width: 112px;
 
-        margin-right: 0;
+        height: 32px;
+    }
 
-        font-size: 22px;
+
+    .logo img {
+        height: 108px;
+
+        width: 108px;
     }
 
 
@@ -2492,7 +2524,9 @@ h1 {
 
 
     .logo {
-        font-size: 20px;
+        width: 100px;
+
+        height: 30px;
     }
 
 
