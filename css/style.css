@@ -86,15 +86,15 @@ button {
 
 
 .logo {
-    position: relative;
+    display: flex;
 
-    display: block;
+    align-items: center;
 
-    width: 132px;
+    height: 56px;
 
-    height: 38px;
+    width: auto;
 
-    overflow: hidden;
+    overflow: visible;
 
     cursor: pointer;
 
@@ -104,21 +104,19 @@ button {
 
 .logo img,
 .auth-logo img {
-    position: absolute;
+    display: block;
 
-    left: 50%;
+    height: 56px;
 
-    top: 50%;
+    width: auto;
 
-    height: 124px;
-
-    width: 124px;
+    max-width: none;
 
     margin: 0;
 
-    transform: translate(-50%, -50%);
+    object-fit: contain;
 
-    object-fit: cover;
+    object-position: center;
 }
 
 
@@ -659,12 +657,56 @@ h1 {
 }
 
 
+.album-title-row {
+    display: flex;
+
+    align-items: flex-start;
+
+    justify-content: space-between;
+
+    gap: 24px;
+
+    margin-bottom: 15px;
+}
+
+
 .album-details h1 {
     font-size: 58px;
 
     line-height: 1;
 
-    margin-bottom: 15px;
+    margin: 0;
+
+    flex: 1;
+
+    min-width: 0;
+}
+
+
+.album-title-score {
+    flex-shrink: 0;
+
+    text-align: right;
+
+    padding-top: 6px;
+}
+
+
+.album-title-score .small-label {
+    display: block;
+}
+
+
+.album-title-score strong {
+    display: block;
+
+    font-size: 44px;
+
+    line-height: 0.95;
+
+    margin-top: 6px;
+
+    min-width: 1.5em;
 }
 
 
@@ -929,7 +971,6 @@ h1 {
     grid-template-columns:
         1fr
         120px
-        120px
         120px;
 
     padding: 0 20px 12px;
@@ -944,12 +985,24 @@ h1 {
 }
 
 
+.songs-header-track {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 12px;
+
+    padding-right: 8px;
+}
+
+
 .song-row {
     display: grid;
 
     grid-template-columns:
         1fr
-        120px
         120px
         120px;
 
@@ -1157,7 +1210,27 @@ h1 {
 
     gap: 14px;
 
+    min-width: 0;
+
+    padding-right: 8px;
+
     font-size: 13px;
+}
+
+
+.song-name .song-title {
+    flex: 1;
+
+    min-width: 0;
+}
+
+
+.song-name .song-score-user {
+    flex-shrink: 0;
+
+    width: 48px;
+
+    text-align: right;
 }
 
 
@@ -1229,7 +1302,7 @@ h1 {
 }
 
 
-.song-row.current .song-score:nth-child(2) {
+.song-row.current .song-score-user {
     font-weight: 800;
 
     font-size: 15px;
@@ -1859,22 +1932,20 @@ h1 {
 
 
 .auth-logo {
-    position: relative;
+    width: auto;
 
-    width: 210px;
+    height: auto;
 
-    height: 64px;
-
-    overflow: hidden;
+    overflow: visible;
 
     margin-bottom: 18px;
 }
 
 
 .auth-logo img {
-    height: 210px;
+    height: 72px;
 
-    width: 210px;
+    width: auto;
 }
 
 
@@ -2423,15 +2494,24 @@ h1 {
     }
 
 
+    .album-details h1 {
+        font-size: clamp(28px, 8vw, 40px);
+    }
+
+
+    .album-title-score strong {
+        font-size: 32px;
+    }
+
+
     .songs-header {
         grid-template-columns:
             1fr
-            56px
             56px;
     }
 
 
-    .songs-header span:nth-child(3) {
+    .songs-header > span:nth-child(2) {
         display: none;
     }
 
@@ -2439,7 +2519,6 @@ h1 {
     .song-row {
         grid-template-columns:
             1fr
-            56px
             56px;
 
         padding: 0 8px;
@@ -2448,7 +2527,7 @@ h1 {
     }
 
 
-    .song-row > :nth-child(3) {
+    .song-row > :nth-child(2) {
         display: none;
     }
 

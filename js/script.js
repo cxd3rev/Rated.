@@ -2064,9 +2064,38 @@ function renderAlbumHero() {
                 </p>
 
 
-                <h1>
-                    ${album.title}
-                </h1>
+                <div class="album-title-row">
+
+                    <h1>
+                        ${album.title}
+                    </h1>
+
+                    <div class="album-title-score">
+
+                        <span class="small-label">
+                            YOUR AVG
+                        </span>
+
+                        <strong
+                            id="heroUserScore"
+                            ${
+                                albumScore !== null
+                                ? `style="${scoreColorStyle(albumScore)}"`
+                                : ""
+                            }
+                        >
+
+                            ${
+                                albumScore !== null
+                                ? albumScore.toFixed(1)
+                                : "—"
+                            }
+
+                        </strong>
+
+                    </div>
+
+                </div>
 
 
                 <p class="artist">
@@ -2103,32 +2132,6 @@ function renderAlbumHero() {
 
 
                 <div class="album-stat-row">
-
-
-                    <div class="album-stat">
-
-                        <span class="small-label">
-                            YOUR SCORE
-                        </span>
-
-                        <strong
-                            id="heroUserScore"
-                            ${
-                                albumScore !== null
-                                ? `style="${scoreColorStyle(albumScore)}"`
-                                : ""
-                            }
-                        >
-
-                            ${
-                                albumScore !== null
-                                ? albumScore.toFixed(1)
-                                : "—"
-                            }
-
-                        </strong>
-
-                    </div>
 
 
                     <div class="album-stat">
@@ -2273,31 +2276,30 @@ function renderSongs() {
                             RATING
                         </span>
 
-                    </div>
-
-
-                    <div
-                        class="
-                            song-score
-                            song-score-user
+                        <div
+                            class="
+                                song-score
+                                song-score-user
+                                ${
+                                    rating !== undefined
+                                    ? "active"
+                                    : ""
+                                }
+                            "
                             ${
                                 rating !== undefined
-                                ? "active"
+                                ? `style="${scoreColorStyle(rating)}"`
                                 : ""
                             }
-                        "
-                        ${
-                            rating !== undefined
-                            ? `style="${scoreColorStyle(rating)}"`
-                            : ""
-                        }
-                    >
+                        >
 
-                        ${
-                            rating !== undefined
-                            ? rating.toFixed(1)
-                            : "—"
-                        }
+                            ${
+                                rating !== undefined
+                                ? rating.toFixed(1)
+                                : "—"
+                            }
+
+                        </div>
 
                     </div>
 

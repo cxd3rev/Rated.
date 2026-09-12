@@ -160,6 +160,7 @@ ALLOWED_FILES = {
     "/js/waitlist.js",
     "/assets/logo.png",
     "/assets/logo-l.png",
+    "/assets/logo-wordmark.png",
     "/assets/icon.svg",
 }
 
