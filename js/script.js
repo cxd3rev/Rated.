@@ -180,6 +180,10 @@ document.addEventListener(
 
         updateArtistSortButton();
 
+        if (typeof setHomeTab === "function") {
+            setHomeTab("albums");
+        }
+
         document.addEventListener(
             "click",
             event => {
@@ -384,10 +388,12 @@ function setActiveNav(activeId) {
 
     const tabMap = {
         navHome: "tabHome",
-        navArtists: "tabArtists",
-        navSaved: "tabSaved",
-        navPerfect: "tabPerfect",
-        navFriends: "tabFriends"
+        navArtists: "tabHome",
+        navSaved: "tabProfile",
+        navPerfect: "tabProfile",
+        navFriends: "tabFriends",
+        navInbox: "tabInbox",
+        navProfile: "tabProfile"
     };
 
 
@@ -417,6 +423,10 @@ function showHome() {
         .classList.remove("hidden");
 
     renderAlbums();
+
+    if (typeof setHomeTab === "function") {
+        setHomeTab(typeof homeTab === "string" ? homeTab : "albums");
+    }
 
 }
 
@@ -473,15 +483,6 @@ function showPerfectAlbums() {
 
 function showFriends() {
 
-    if (!currentUser) {
-
-        openAuth();
-
-        return;
-
-    }
-
-
     hideAllPages();
 
     setActiveNav("navFriends");
@@ -493,6 +494,10 @@ function showFriends() {
         .classList.remove("hidden");
 
     renderFriendsPage();
+
+    if (typeof enhanceFriendsPage === "function") {
+        enhanceFriendsPage();
+    }
 
 }
 
@@ -518,11 +523,7 @@ function showArtists() {
 
 function goBackFromAlbum() {
 
-    if (
-        albumReturnTo === "friend"
-        &&
-        currentFriendUserId
-    ) {
+    if (albumReturnTo === "friend" && currentFriendUserId) {
 
         openFriendProfile(currentFriendUserId);
 
@@ -530,19 +531,13 @@ function goBackFromAlbum() {
 
     }
 
-
-    if (
-        albumReturnTo === "artist"
-        &&
-        currentArtistName
-    ) {
+    if (albumReturnTo === "artist" && currentArtistName) {
 
         openArtist(currentArtistName);
 
         return;
 
     }
-
 
     showHome();
 
@@ -1392,6 +1387,10 @@ function openArtist(artistName) {
             )
             .join("");
 
+    if (typeof enhanceArtistHeroActions === "function") {
+        enhanceArtistHeroActions(artist.name);
+    }
+
 }
 
 
@@ -1406,6 +1405,9 @@ function updateProfileButton() {
             "profileButton"
         );
 
+    if (!button) {
+        return;
+    }
 
     if (!currentUser) {
 
@@ -1967,6 +1969,18 @@ function openAlbum(albumId, fromArtist = false, fromFriend = false) {
     hideAlbumResult();
 
     syncStickyRatingChrome();
+
+    if (typeof updateTrackProgressChrome === "function") {
+        updateTrackProgressChrome();
+    }
+
+    if (typeof enhanceAlbumHeroActions === "function") {
+        enhanceAlbumHeroActions();
+    }
+
+    if (typeof extractCoverPalette === "function") {
+        extractCoverPalette(currentAlbum);
+    }
 
     pendingSongScroll = true;
 
@@ -3334,7 +3348,13 @@ function updateDial() {
         }
 
 
+        // Live album average on every drag tick (sticky + hero + discovery).
+        // Avoid updateCurrentSongScoreDisplay / placeSongRater mid-drag.
         updateAlbumScoreChrome();
+
+        if (typeof updateTrackProgressChrome === "function") {
+            updateTrackProgressChrome();
+        }
 
         return;
 
@@ -4042,6 +4062,20 @@ function updateAlbumScoreChrome() {
     }
 
 
+    // Keep discovery "YOUR RATING" in sync while rating (if card is in DOM).
+    document
+        .querySelectorAll(
+            `.discovery-card[data-album-id="${currentAlbum.id}"] .discovery-you`
+        )
+        .forEach(el => {
+
+            el.textContent = text;
+
+            applyScoreColor(el, score);
+
+        });
+
+
     updateRainbowDot(score);
 
 
@@ -4068,6 +4102,10 @@ function updateLiveScoreDisplays() {
     updateAlbumScoreChrome();
 
     updateCurrentSongScoreDisplay();
+
+    if (typeof updateTrackProgressChrome === "function") {
+        updateTrackProgressChrome();
+    }
 
 }
 
@@ -5612,12 +5650,26 @@ function applySearch() {
             "searchInput"
         );
 
+    if (!input) {
+        return;
+    }
 
     const query =
         input.value
             .toLowerCase()
             .trim();
 
+    if (typeof renderExpandedSearch === "function") {
+        const handled = renderExpandedSearch(query);
+        if (handled || document.getElementById("searchPanel") &&
+            !document.getElementById("searchPanel").classList.contains("hidden")) {
+            if (!query && typeof setHomeTab === "function") {
+                showHome();
+                renderDiscoveryFeed(buildDiscoveryList());
+            }
+            return;
+        }
+    }
 
     const filtered =
         albums.filter(
@@ -5638,6 +5690,14 @@ function applySearch() {
                 album.genre
                     .toLowerCase()
                     .includes(query)
+
+                ||
+
+                (
+                    typeof albumMatchesGenreQuery === "function"
+                    &&
+                    albumMatchesGenreQuery(album, query)
+                )
         );
 
 
@@ -5654,9 +5714,13 @@ function applySearch() {
 
 
     const searchingArtists =
-        !artistsPage.classList.contains("hidden")
-        ||
-        !artistPage.classList.contains("hidden");
+        artistsPage &&
+        artistPage &&
+        (
+            !artistsPage.classList.contains("hidden")
+            ||
+            !artistPage.classList.contains("hidden")
+        );
 
 
     if (searchingArtists) {
@@ -5685,13 +5749,15 @@ function applySearch() {
     }
 
 
-    hideAllPages();
+    showHome();
 
-    setActiveNav("navHome");
+    if (typeof setHomeTab === "function") {
+        setHomeTab("albums");
+    }
 
-    document
-        .getElementById("homePage")
-        .classList.remove("hidden");
+    if (typeof renderDiscoveryFeed === "function") {
+        renderDiscoveryFeed(buildDiscoveryList(filtered));
+    }
 
     renderAlbums(filtered);
 

@@ -39,21 +39,21 @@ body {
 }
 
 .brand {
-    position: relative;
-    width: 240px;
-    height: 72px;
-    overflow: hidden;
+    display: flex;
+    align-items: center;
+    width: auto;
+    height: auto;
+    overflow: visible;
     margin-bottom: 16px;
 }
 
 .brand img {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    height: 240px;
-    width: 240px;
-    transform: translate(-50%, -50%);
-    object-fit: cover;
+    display: block;
+    height: 56px;
+    width: auto;
+    max-width: min(80vw, 280px);
+    object-fit: contain;
+    object-position: left center;
 }
 
 .card {
