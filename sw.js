@@ -1,4 +1,4 @@
-const CACHE = "rated-app-v16";
+const CACHE = "rated-app-v44";
 const SHELL = [
     "./",
     "./index.html",
@@ -6,8 +6,14 @@ const SHELL = [
     "./js/albums.js",
     "./js/artistPhotos.js",
     "./js/globalRatings.js",
+    "./js/genres.js",
     "./js/script.js",
+    "./js/rated-ui.js",
     "./manifest.webmanifest",
+    "./assets/rated-icon.png",
+    "./assets/rated-icon-light.png",
+    "./assets/rated-wordmark-light.png",
+    "./assets/rated-wordmark-dark.png",
     "./assets/logo.png",
     "./assets/logo-wordmark.png"
 ];
